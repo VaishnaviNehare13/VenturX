@@ -1,0 +1,135 @@
+<style>
+ .branding-layout { display: grid; grid-template-columns: 300px 1fr 320px; gap: 24px; align-items: start; }
+ 
+ .glass-panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; transition: all 0.3s ease; }
+ .glass-panel:hover { border-color: rgba(99,102,241,0.2); background: rgba(99,102,241,0.02); box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+ 
+ .ai-generate-btn { background: linear-gradient(135deg, #6366f1, #ec4899); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; width: 100%; box-shadow: 0 4px 15px rgba(236,72,153,0.3); display: flex; justify-content: center; align-items: center; gap: 8px; }
+ .ai-generate-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236,72,153,0.5); }
+ 
+ .form-group { margin-bottom: 16px; }
+ .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+ .form-input { width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc; transition: border-color 0.2s; }
+ .form-input:focus { outline: none; border-color: #6366f1; }
+ 
+ .logo-preview-box { height: 350px; background: radial-gradient(circle at center, rgba(255,255,255,0.05), transparent); border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 24px; position: relative; overflow: hidden; transition: all 0.3s ease; }
+ .logo-preview-box.generated { border-style: solid; border-color: rgba(99,102,241,0.4); box-shadow: inset 0 0 40px rgba(99,102,241,0.1); }
+ 
+ .brand-color-swatch { width: 40px; height: 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+ .color-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 8px; }
+ 
+ .ai-loader-overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+ .ai-loader-overlay.active { opacity: 1; pointer-events: all; }
+ .ai-spinner { width: 50px; height: 50px; border: 3px solid rgba(236,72,153,0.2); border-top-color: #ec4899; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+ 
+ @keyframes spin { 100% { transform: rotate(360deg); } }
+ 
+ .history-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; }
+ .history-item:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
+</style>
+
+<div class="page-header" style="margin-bottom: 24px;">
+ <div>
+  <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;"><i data-lucide="palette" class="icon-sm text-purple-500"></i> AI Branding Studio</h2>
+  <p class="lead muted" style="margin-top: 8px;">Instantly generate a premium startup identity, logo, and brand kit.</p>
+ </div>
+</div>
+
+<div class="branding-layout">
+
+ <!-- LEFT PANEL: Startup Idea Input -->
+ <div class="glass-panel">
+  <h3 style="margin-top: 0; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc;">Startup DNA</h3>
+  
+  <div class="form-group">
+   <label>Startup Idea / Description</label>
+   <textarea id="startupIdea" class="form-input" placeholder="e.g. An AI platform that analyzes medical records..." rows="3" style="resize: none; font-family: inherit;"></textarea>
+  </div>
+  
+  <div class="form-group">
+   <label>Industry</label>
+   <select id="industry" class="form-input">
+    <option value="SaaS">SaaS & Software</option>
+    <option value="Fintech">Fintech</option>
+    <option value="Healthtech">Healthtech</option>
+    <option value="E-commerce">E-commerce</option>
+    <option value="Cybersecurity">Cybersecurity</option>
+    <option value="Education">Education & EdTech</option>
+    <option value="Creative Agency">Creative Agency</option>
+   </select>
+  </div>
+  
+  <div class="form-group">
+   <label>Target Audience</label>
+   <select id="brandAudience" class="form-input">
+    <option value="B2B Enterprise">B2B Enterprise</option>
+    <option value="SMBs">Small Businesses</option>
+    <option value="Gen Z Consumers">Gen Z Consumers</option>
+    <option value="Developers">Developers</option>
+   </select>
+  </div>
+  
+  <div class="form-group">
+   <label>Brand Vibe</label>
+   <select id="brandVibe" class="form-input">
+    <option value="Futuristic">Futuristic & High-Tech</option>
+    <option value="Minimalist">Minimalist & Clean</option>
+    <option value="Playful">Playful & Energetic</option>
+    <option value="Corporate">Corporate & Trustworthy</option>
+   </select>
+  </div>
+  
+  <div class="form-group">
+   <label>Primary Color Preference</label>
+   <select id="primaryColor" class="form-input">
+    <option value="#6366f1">Indigo / Tech Blue</option>
+    <option value="#10b981">Emerald / Growth Green</option>
+    <option value="#ec4899">Pink / Creative</option>
+    <option value="#f59e0b">Amber / Energetic</option>
+    <option value="#8b5cf6">Violet / Web3</option>
+   </select>
+  </div>
+  
+  <button class="ai-generate-btn" onclick="generateBrandIdentity()" style="margin-top: 24px;">
+   <i data-lucide="sparkles" class="icon-sm text-amber-500"></i> Generate Identity
+  </button>
+ </div>
+
+ <!-- CENTER PANEL: Logo Preview -->
+ <div style="display: flex; flex-direction: column; gap: 24px;">
+  
+  <div class="glass-panel" style="flex: 1;">
+   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Logo Synthesizer</h3>
+    <button class="btn primary" onclick="downloadLogo()"> Download SVG</button>
+   </div>
+   
+   <div id="logoPreviewBox" class="logo-preview-box">
+    <div id="logoContainer" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;"></div>
+   </div>
+   
+   <div style="display: flex; gap: 12px;">
+    <button class="btn" style="flex: 1;" onclick="regenerateLogo()" id="btnRegenerate" disabled> Generate Another Concept</button>
+   </div>
+  </div>
+  
+ </div>
+
+ <!-- RIGHT PANEL: Brand Kit -->
+ <div style="display: flex; flex-direction: column; gap: 24px;">
+  
+  <div class="glass-panel">
+   <h3 style="margin-top: 0; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc;">Brand Kit</h3>
+   
+   <div id="brandKit" style="display: flex; flex-direction: column; gap: 16px; color: #f8fafc;"></div>
+  </div>
+  
+  <div class="glass-panel">
+   <h3 style="margin-top: 0; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc;">Saved Identities</h3>
+   <div id="savedBrandsList" style="max-height: 150px; overflow-y: auto; margin-top: 12px;">
+    <p class="muted" style="font-size: 13px;">No saved brands.</p>
+   </div>
+  </div>
+  
+ </div>
+</div>

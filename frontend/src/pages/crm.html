@@ -1,0 +1,302 @@
+<style>
+ .crm-avatar { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; margin-right: 12px; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+ .ai-score-bar-bg { width: 100px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+ .ai-score-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease-in-out; }
+ .ai-score-cold { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+ .ai-score-active { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+ .ai-score-hot { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+ 
+ .glass-row { transition: all 0.2s ease; border-bottom: 1px solid rgba(255,255,255,0.05); }
+ .glass-row:hover { background: rgba(255,255,255,0.03); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 2px solid var(--color-primary); }
+ 
+ .timeline { border-left: 2px solid rgba(255,255,255,0.1); margin-left: 12px; padding-left: 20px; position: relative; }
+ .timeline-item { margin-bottom: 16px; position: relative; }
+ .timeline-item::before { content: ''; position: absolute; left: -26px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); border: 2px solid #0f172a; }
+ 
+ .insight-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; transition: all 0.3s ease; }
+ .insight-card:hover { border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.02); }
+</style>
+
+<div class="page-header">
+ <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+  <div>
+   <h2>SaaS Customer Intelligence</h2>
+   <p class="lead muted">Manage and monitor AI startup platform users.</p>
+  </div>
+  <button class="btn-premium" onclick="openAddLeadModal()"> Add Startup</button>
+ </div>
+</div>
+
+<!-- AI CRM KPIs -->
+<div class="kpi-grid mb-4" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);"><i data-lucide="zap" class="icon-sm text-amber-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Total Startups</h3>
+   <div id="kpiTotalStartups" class="kpi-value">0</div>
+   <div class="kpi-meta"><span class="muted" style="font-size: 12px;">Registered</span></div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #10b981, #059669);"></div>
+  <div>
+   <h3 class="kpi-title">Active Users</h3>
+   <div id="kpiActiveUsers" class="kpi-value">0</div>
+   <div class="kpi-meta"><span class="muted" style="font-size: 12px;">Last 30 days</span></div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i data-lucide="gem" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Premium Clients</h3>
+   <div id="kpiPremium" class="kpi-value">0</div>
+   <div class="kpi-meta"><span class="trend-up">Pro & Ent</span></div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);"></div>
+  <div>
+   <h3 class="kpi-title">Enterprise Accounts</h3>
+   <div id="kpiEnterprise" class="kpi-value">0</div>
+   <div class="kpi-meta"><span class="muted" style="font-size: 12px;">Custom Plans</span></div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #ec4899, #db2777);"></div>
+  <div>
+   <h3 class="kpi-title">Retention Rate</h3>
+   <div id="kpiRetention" class="kpi-value">94%</div>
+   <div class="kpi-meta"><span class="muted" style="font-size: 12px;">Monthly</span></div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);"><i data-lucide="brain" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">AI Tool Usage</h3>
+   <div id="kpiAiUsage" class="kpi-value">78%</div>
+   <div class="kpi-meta"><span class="muted" style="font-size: 12px;">Adoption Rate</span></div>
+  </div>
+ </div>
+</div>
+
+<!-- AI Business Insights Panel -->
+<div class="card" style="margin-bottom: 24px; border: 1px solid rgba(99,102,241,0.3); box-shadow: 0 8px 32px rgba(99,102,241,0.1);">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+  <div>
+   <h3 style="display: flex; align-items: center; gap: 8px;"><i data-lucide="brain" class="icon-sm text-purple-500"></i> AI Business Insights</h3>
+   <p class="muted" style="font-size: 13px;">Dynamic predictive intelligence and automated strategy recommendations.</p>
+  </div>
+  <select id="insightsCustomerSelect" title="Select Customer" style="padding: 8px 16px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);" onchange="window.loadBusinessInsights()">
+   <!-- Populated dynamically -->
+  </select>
+ </div>
+ 
+ <div id="businessInsightsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+  <p class="muted" style="padding: 20px 0;">Select a startup to generate AI intelligence insights...</p>
+ </div>
+</div>
+
+<!-- Pipeline Stages -->
+<div class="card" style="margin-bottom: 24px;">
+ <h3>Sales Pipeline</h3>
+ <p class="muted" style="font-size: 13px; margin-top: 4px;">Leads by stage</p>
+ <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px;">
+  <div style="padding: 16px; border-radius: 10px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); text-align: center;">
+   <div id="countSignup" style="font-size: 24px; font-weight: 800; color: #3b82f6;">0</div>
+   <div class="muted" style="font-size: 12px; margin-top: 4px;">New Signup</div>
+  </div>
+  <div style="padding: 16px; border-radius: 10px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); text-align: center;">
+   <div id="countActive" style="font-size: 24px; font-weight: 800; color: #10b981;">0</div>
+   <div class="muted" style="font-size: 12px; margin-top: 4px;">Active User</div>
+  </div>
+  <div style="padding: 16px; border-radius: 10px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); text-align: center;">
+   <div id="countPremium" style="font-size: 24px; font-weight: 800; color: #f59e0b;">0</div>
+   <div class="muted" style="font-size: 12px; margin-top: 4px;">Premium Prospect</div>
+  </div>
+  <div style="padding: 16px; border-radius: 10px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); text-align: center;">
+   <div id="countEnterprise" style="font-size: 24px; font-weight: 800; color: #8b5cf6;">0</div>
+   <div class="muted" style="font-size: 12px; margin-top: 4px;">Enterprise Client</div>
+  </div>
+  <div style="padding: 16px; border-radius: 10px; background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.3); text-align: center;">
+   <div id="countLoyal" style="font-size: 24px; font-weight: 800; color: #ec4899;">0</div>
+   <div class="muted" style="font-size: 12px; margin-top: 4px;">Loyal Customer</div>
+  </div>
+ </div>
+</div>
+
+<!-- CRM Analytics -->
+<div class="card" style="margin-bottom: 24px;">
+ <h3>SaaS Analytics</h3>
+ <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 16px;">
+  <div style="position: relative; height: 250px;">
+   <canvas id="userGrowthChart"></canvas>
+  </div>
+  <div style="position: relative; height: 250px;">
+   <canvas id="startupCategoriesChart"></canvas>
+  </div>
+  <div style="position: relative; height: 250px;">
+   <canvas id="subscriptionDistributionChart"></canvas>
+  </div>
+  <div style="position: relative; height: 250px;">
+   <canvas id="aiModuleUsageChart"></canvas>
+  </div>
+ </div>
+</div>
+
+
+<!-- Leads Table -->
+<div class="card">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+  <h3>Lead Management</h3>
+  <div style="display: flex; gap: 12px;">
+   <select id="filterStage" onchange="filterLeads()" style="padding: 8px 12px;">
+    <option value="all">All Stages</option>
+    <option value="new">New</option>
+    <option value="contacted">Contacted</option>
+    <option value="proposal">Proposal</option>
+    <option value="negotiation">Negotiation</option>
+    <option value="won">Closed Won</option>
+    <option value="lost">Closed Lost</option>
+   </select>
+   <input type="search" id="searchLead" placeholder="<i data-lucide="search" class="icon-sm text-blue-500"></i> Search leads..." style="padding: 8px 12px; width: 200px;" onkeyup="filterLeads()">
+  </div>
+ </div>
+ <div class="table-responsive">
+  <table id="leadsTable" style="font-size: 13px;">
+   <thead>
+    <tr>
+     <th>Startup Name</th>
+     <th>Subscription</th>
+     <th>Activity Level</th>
+     <th>Health Status</th>
+     <th>AI Score</th>
+     <th style="text-align: right;">Last Active</th>
+     <th style="text-align: center;">Actions</th>
+    </tr>
+   </thead>
+   <tbody id="leadsTableBody">
+    <!-- Dynamic content will be rendered here -->
+   </tbody>
+  </table>
+ </div>
+</div>
+
+<!-- Add Lead Modal -->
+<div id="modalAddLead" class="modal-overlay">
+ <div class="modal" style="max-width: 600px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+   <h3 style="margin: 0;">Add Startup</h3>
+   <button class="icon-btn" onclick="closeAddLeadModal()">✕</button>
+  </div>
+  <form onsubmit="handleAddLead(event)">
+   <div class="grid two" style="gap: 16px;">
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Founder/Contact Name *</label>
+     <input type="text" id="leadName" placeholder="Aarav Sharma" style="width: 100%;" required>
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Email Address *</label>
+     <input type="email" id="leadEmail" placeholder="aarav@technova.in" style="width: 100%;" required>
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Startup Name *</label>
+     <input type="text" id="leadCompany" placeholder="TechNova AI" style="width: 100%;" required>
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Industry</label>
+     <input type="text" id="leadIndustry" placeholder="Technology" style="width: 100%;">
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Subscription Plan *</label>
+     <select id="leadPlan" title="Subscription Plan" style="width: 100%;" required>
+      <option value="free">Free</option>
+      <option value="pro">Pro</option>
+      <option value="enterprise">Enterprise</option>
+     </select>
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Activity Level *</label>
+     <select id="leadActivity" title="Activity Level" style="width: 100%;" required>
+      <option value="Highly Active">Highly Active</option>
+      <option value="Moderate">Moderate</option>
+      <option value="Inactive">Inactive</option>
+     </select>
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Lifecycle Stage *</label>
+     <select id="leadStage" title="Lifecycle Stage" style="width: 100%;" required>
+      <option value="New Signup">New Signup</option>
+      <option value="Active User">Active User</option>
+      <option value="Premium Prospect">Premium Prospect</option>
+      <option value="Enterprise Client">Enterprise Client</option>
+      <option value="Loyal Customer">Loyal Customer</option>
+     </select>
+    </div>
+    <div>
+     <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Forecasts Created</label>
+     <input type="number" id="leadForecasts" placeholder="0" style="width: 100%;" value="0">
+    </div>
+   </div>
+   <div style="grid-column: 1 / -1; margin-top: 8px;">
+    <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Admin Notes</label>
+    <textarea id="leadNotes" rows="3" placeholder="Additional information..." style="width: 100%; resize: vertical;"></textarea>
+   </div>
+   <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+    <button type="button" class="btn-premium" onclick="closeAddLeadModal()">Cancel</button>
+    <button type="submit" class="btn-premium"><i data-lucide="check-circle-2" class="icon-sm text-green-500"></i> Add Startup</button>
+   </div>
+  </form>
+ </div>
+</div>
+</div>
+
+<!-- Customer Profile Modal -->
+<div id="modalCustomerProfile" class="modal-overlay">
+ <div class="modal" style="max-width: 800px; padding: 0; overflow: hidden; background: #0f172a; border: 1px solid rgba(255,255,255,0.1);">
+  <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: flex-start; background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);">
+   <div id="modalProfileHeader" style="display: flex; gap: 20px; align-items: center;">
+    <!-- Header injected dynamically -->
+   </div>
+   <button class="icon-btn" onclick="closeCustomerProfileModal()">✕</button>
+  </div>
+  
+  <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+   <div class="grid two" style="gap: 24px; margin-bottom: 24px;">
+    
+    <!-- Left Column: Engagement & Insights -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+     <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+      <h4 style="margin-top: 0; margin-bottom: 16px; color: #f8fafc; font-size: 15px;"><i data-lucide="bar-chart" class="icon-sm text-blue-500"></i> AI Engagement Analytics</h4>
+      <div id="modalProfileAnalytics" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+       <!-- Analytics injected dynamically -->
+      </div>
+     </div>
+     
+     <div style="background: rgba(99,102,241,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">
+      <h4 style="margin-top: 0; margin-bottom: 12px; color: #818cf8; font-size: 15px; display: flex; align-items: center; gap: 8px;"><i data-lucide="bot" class="icon-sm text-purple-500"></i> AI Strategic Insights</h4>
+      <div id="modalProfileInsights" style="font-size: 14px; line-height: 1.6;">
+       <!-- Insights injected dynamically -->
+      </div>
+     </div>
+    </div>
+    
+    <!-- Right Column: Timeline -->
+    <div>
+     <h4 style="margin-top: 0; margin-bottom: 20px; color: #f8fafc; font-size: 15px;"> SaaS Activity Timeline</h4>
+     <div class="timeline" id="modalProfileTimeline">
+      <!-- Timeline injected dynamically -->
+     </div>
+    </div>
+    
+   </div>
+   
+   <div id="modalProfileNotesContainer">
+    <!-- Notes injected dynamically if exist -->
+   </div>
+  </div>
+  
+  <div style="padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end; background: rgba(0,0,0,0.2);">
+   <button type="button" class="btn-premium" onclick="closeCustomerProfileModal()">Close Dashboard</button>
+  </div>
+ </div>
+</div>

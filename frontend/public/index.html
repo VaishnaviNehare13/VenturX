@@ -1,0 +1,56 @@
+ <!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VenturX — AI Business Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Display:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="src/styles/main.css" />
+  <!-- Chart.js CDN for charts on Analytics/Financials -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+ </head>
+ <body>
+  <div id="app" class="layout">
+   <aside id="sidebar" class="sidebar"></aside>
+   <div id="sidebar-overlay" class="sidebar-overlay"></div>
+   <div class="main">
+    <header id="topbar" class="topbar"></header>
+    <main id="content" class="content" aria-live="polite"></main>
+    <footer id="footer" class="footer"></footer>
+   </div>
+  </div>
+
+
+  <script type="importmap">
+   {
+    "imports": {
+     "@google/generative-ai": "https://esm.run/@google/generative-ai"
+    }
+   }
+  </script>
+  <script src="js/core/platformDataEngine.js"></script>
+  <script src="src/js/api.js" defer></script>
+  <script src="src/js/router.js" defer></script>
+  <script src="src/js/segmentation.js" defer></script>
+  <script src="src/js/forecasting.js" defer></script>
+  <script src="src/js/marketing.js" defer></script>
+  <script src="src/js/crm.js" defer></script>
+  <script src="src/js/content.js" defer></script>
+  <script src="src/js/analyticsEngine.js" defer></script>
+  <script src="src/js/analytics.js" defer></script>
+  <script src="src/js/financialEngine.js" defer></script>
+  <script src="src/js/financialCharts.js" defer></script>
+  <script src="src/js/financialInsights.js" defer></script>
+  <script src="src/js/financialModals.js" defer></script>
+  <script src="src/js/financials.js" defer></script>
+  <script type="module" src="src/js/branding.js"></script>
+  <script src="src/js/app.js" defer></script>
+ </body>
+ </html>

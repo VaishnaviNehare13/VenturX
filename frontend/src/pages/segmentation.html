@@ -1,0 +1,117 @@
+<div class="page-header">
+ <h2>Customer Segmentation</h2>
+ <p class="lead muted">AI-powered customer clustering using K-Means + UMAP</p>
+</div>
+
+<!-- Segmentation Stats -->
+<div class="kpi-grid mb-4" style="margin-bottom: 24px;">
+ <div class="card kpi interactive-card" onclick="window.showKPIDetails('total')">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #6366f1, #4f46e5);"><i data-lucide="users" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Total Customers</h3>
+   <div class="kpi-value" id="segTotalCustomers"><div class="skeleton skeleton-text" style="width: 80px; height: 32px;"></div></div>
+   <div class="kpi-meta"><span class="muted">Analyzed by AI</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="window.showKPIDetails('silhouette')">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #10b981, #059669);"><i data-lucide="target" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Silhouette Score</h3>
+   <div class="kpi-value" id="segSilhouette"><div class="skeleton skeleton-text" style="width: 80px; height: 32px;"></div></div>
+   <div class="kpi-meta"><span class="trend-up">+77%</span><span class="muted">vs baseline</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="window.showKPIDetails('segments')">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i data-lucide="bar-chart" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Segments</h3>
+   <div class="kpi-value" id="segCount"><div class="skeleton skeleton-text" style="width: 80px; height: 32px;"></div></div>
+   <div class="kpi-meta"><span class="muted">Distinct groups</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="window.showKPIDetails('algorithm')">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);"><i data-lucide="bot" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Algorithm</h3>
+   <div class="kpi-value" style="font-size: 14px;">K-Means</div>
+   <div class="kpi-meta"><span class="muted">+ UMAP</span></div>
+  </div>
+ </div>
+</div>
+
+<div class="grid two">
+ <div class="card">
+  <h3>Customer Segments</h3>
+  <p class="muted" style="font-size: 13px; margin-bottom: 16px;">AI-identified customer groups based on RFM analysis</p>
+  <div id="segmentList">
+   <div class="skeleton" style="height: 72px; margin-bottom: 8px;"></div>
+   <div class="skeleton" style="height: 72px; margin-bottom: 8px;"></div>
+   <div class="skeleton" style="height: 72px;"></div>
+  </div>
+ </div>
+ <div class="card">
+  <h3>Segment Distribution</h3>
+  <p class="muted" style="font-size: 13px; margin-bottom: 16px;">Visual breakdown of customer segments</p>
+  <div style="position: relative; height: 280px;" id="segmentChartContainer">
+   <div class="skeleton skeleton-chart" style="border-radius: 50%; width: 280px; margin: 0 auto;"></div>
+   <canvas id="segmentChart" style="display: none;"></canvas>
+  </div>
+ </div>
+</div>
+
+<!-- UMAP Visualization -->
+<div class="card" style="margin-top: 24px;">
+ <h3>UMAP Visualization</h3>
+ <p class="muted" style="font-size: 13px; margin-bottom: 16px;">Interactive 2D scatter plot of customer clusters</p>
+ <div style="position: relative; height: 400px; display: flex; align-items: center; justify-content: center;" id="umapContainer">
+  <div class="skeleton skeleton-chart" style="height: 400px;"></div>
+ </div>
+</div>
+
+<!-- Segment Details Table -->
+<div class="card" style="margin-top: 24px;">
+ <h3>Segment Analysis</h3>
+ <p class="muted" style="font-size: 13px; margin-bottom: 16px;">Detailed metrics for each customer segment</p>
+ <div class="table-responsive">
+  <table id="segmentTable" style="font-size: 13px;">
+   <thead>
+    <tr>
+     <th>Segment</th>
+     <th>Count</th>
+     <th>Avg Order Value</th>
+     <th>Frequency</th>
+     <th>Recency (days)</th>
+     <th>Income</th>
+     <th>Targeting Strategy</th>
+    </tr>
+   </thead>
+   <tbody id="segmentTableBody">
+    <tr><td colspan="7"><div class="skeleton" style="height: 40px; margin-bottom: 8px;"></div></td></tr>
+    <tr><td colspan="7"><div class="skeleton" style="height: 40px; margin-bottom: 8px;"></div></td></tr>
+    <tr><td colspan="7"><div class="skeleton" style="height: 40px;"></div></td></tr>
+   </tbody>
+  </table>
+ </div>
+</div>
+
+<!-- Targeting Suggestions -->
+<div class="card" style="margin-top: 24px;">
+ <h3>AI Targeting Recommendations</h3>
+ <div id="targetingSuggestions" style="margin-top: 16px;">
+  <div class="skeleton" style="height: 80px; margin-bottom: 12px;"></div>
+  <div class="skeleton" style="height: 80px; margin-bottom: 12px;"></div>
+  <div class="skeleton" style="height: 80px;"></div>
+ </div>
+</div>
+
+<div id="modal" class="spinner hidden" style="background: rgba(0,0,0,0.65);">
+ <div class="card" style="max-width:540px; width:92%;">
+  <h3 id="modalTitle">Segment Details</h3>
+  <div id="modalBody" class="muted">Loading...</div>
+  <div class="toolbar" style="margin-top:12px; justify-content:flex-end">
+   <button class="btn-premium" id="closeModal">Close</button>
+  </div>
+ </div>
+</div>
+
+

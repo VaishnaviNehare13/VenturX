@@ -1,0 +1,52 @@
+<div class="page-header">
+ <h2>Notifications</h2>
+ <p class="lead muted">View alerts and recent activity across the platform.</p>
+</div>
+<div class="card">
+ <h3>Alerts</h3>
+ <div id="alerts"></div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+ <h3>Activity Feed</h3>
+ <div id="activity"></div>
+</div>
+
+<script>
+ (function initNotifications(){
+  const alerts = [
+   { title:'Payment received', details:'Invoice #1042 - ₹1,240', open:false },
+   { title:'Campaign budget limit', details:'Spring Promo at 85% spend', open:false },
+   { title:'New lead signup', details:'Maria joined from referral', open:false }
+  ];
+  const activity = [
+   'You replied to a customer message',
+   'Budget updated for Retargeting Q4',
+   'New design asset uploaded'
+  ];
+  const alertsEl = document.getElementById('alerts');
+  const actEl = document.getElementById('activity');
+  if (alertsEl) {
+   alertsEl.innerHTML = alerts.map((a,i)=> `
+    <div class='card' style='margin:8px 0;'>
+     <div style='display:flex;justify-content:space-between;align-items:center;'>
+      <div><strong>${a.title}</strong></div>
+      <button class='btn-premium' data-idx='${i}'>Details</button>
+     </div>
+     <div class='muted' data-detail='${i}' style='margin-top:6px; display:none;'>${a.details}</div>
+    </div>
+   `).join('');
+   alertsEl.addEventListener('click', (e)=>{
+    const t = e.target;
+    if (t && t.matches('button[data-idx]')){
+     const idx = t.getAttribute('data-idx');
+     const d = document.querySelector(`[data-detail='${idx}']`);
+     if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    }
+   });
+  }
+  if (actEl) actEl.innerHTML = activity.map(a=> `<div class='muted' style='padding:8px;border-bottom:1px solid rgba(148,163,184,0.1)'>${a}</div>`).join('');
+ })();
+</script>
+
+

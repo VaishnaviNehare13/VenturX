@@ -1,0 +1,635 @@
+<div class="page-header">
+ <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+  <div>
+   <h2>Marketing Campaigns</h2>
+   <p class="lead muted">Track campaign performance and ROI.</p>
+  </div>
+  <button class="btn-premium" onclick="openNewCampaignModal()"> New Campaign</button>
+ </div>
+</div>
+
+<div id="marketingDashboard">
+
+  <!-- KPI CARDS -->
+  <section id="marketingKPIs" style="display:block; visibility:visible; opacity:1;">
+<!-- AI Marketing KPIs -->
+<div class="kpi-grid mb-4" style="margin-bottom: 24px;">
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);"><i data-lucide="bot" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">AI Prediction Accuracy</h3>
+   <div class="kpi-value" id="aiPredictionAccuracy">Loading...</div>
+   <div class="kpi-meta">
+    <span class="trend-up">+16%</span><span class="muted" style="font-size: 12px;">vs baseline</span>
+   </div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #ec4899, #be185d);"><i data-lucide="users" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Predicted Conversions</h3>
+   <div class="kpi-value" id="predictedConversions">Loading...</div>
+   <div class="kpi-meta">
+    <span class="muted" style="font-size: 12px;">Based on AI model</span>
+   </div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #b45309);"><i data-lucide="target" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Campaign Success Rate</h3>
+   <div class="kpi-value" id="successRate">Loading...</div>
+   <div class="kpi-meta">
+    <span class="muted" style="font-size: 12px;">AI predicted</span>
+   </div>
+  </div>
+ </div>
+ <div class="card kpi">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #10b981, #047857);"><i data-lucide="indian-rupee" class="icon-sm text-green-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Marketing ROI</h3>
+   <div class="kpi-value" id="marketingRoi">Loading...</div>
+   <div class="kpi-meta">
+    <span class="trend-up">↑ 12%</span><span class="muted" style="font-size: 12px;">vs last month</span>
+   </div>
+  </div>
+ </div>
+</div>
+  </section>
+
+  <!-- CHARTS -->
+  <section id="marketingCharts" style="display:block; visibility:visible; opacity:1;">
+<div class="grid two">
+ <!-- Chart Section -->
+ <div class="card">
+  <h3>Leads by Channel</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Distribution across marketing channels</p>
+  <div style="position: relative; height: 280px; width: 100%; margin-top: 16px;">
+   <canvas id="marketingChart"></canvas>
+  </div>
+ </div>
+
+ <!-- Performance Chart -->
+ <div class="card">
+  <h3>Campaign Performance</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Monthly leads generated</p>
+  <div style="position: relative; height: 280px; width: 100%; margin-top: 16px;">
+   <canvas id="performanceChart"></canvas>
+  </div>
+ </div>
+</div>
+  </section>
+
+  <!-- ACTIVE CAMPAIGNS -->
+  <section id="activeCampaigns" style="display:block; visibility:visible; opacity:1;">
+<!-- Active Campaigns Section -->
+<div class="card" style="margin-top: 24px; background: transparent; border: none; box-shadow: none; padding: 0;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+  <div>
+   <h3 style="margin: 0; font-size: 20px;">Active Campaigns</h3>
+   <p class="muted" style="font-size: 13px; margin-top: 4px;">Manage your dynamically generated AI campaigns.</p>
+  </div>
+ </div>
+ <div id="activeCampaignsList" class="active-campaigns-grid">
+  <!-- Cards will be dynamically inserted here -->
+ </div>
+</div>
+
+<!-- Campaign Tracker Table -->
+<div class="card" style="margin-top: 24px;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+  <div>
+   <h3>Campaign Tracker</h3>
+   <p class="muted" style="font-size: 13px; margin-top: 4px;">Monitor all active and past campaigns</p>
+  </div>
+  <div style="display: flex; gap: 12px;">
+   <select id="filterStatus" onchange="filterCampaigns()" style="padding: 8px 12px;">
+    <option value="all">All Status</option>
+    <option value="active">Active</option>
+    <option value="paused">Paused</option>
+    <option value="completed">Completed</option>
+   </select>
+   <input type="text" id="searchCampaign" placeholder="<i data-lucide="search" class="icon-sm text-blue-500"></i> Search..." style="width: 200px; padding: 8px 12px;" onkeyup="filterCampaigns()">
+  </div>
+ </div>
+ <div class="table-responsive">
+  <table id="campaignTable" style="font-size: 13px;">
+   <thead>
+    <tr>
+     <th>Campaign Name</th>
+     <th>Channel</th>
+     <th>Start Date</th>
+     <th>Status</th>
+     <th style="text-align: right;">Budget</th>
+     <th style="text-align: right;">Spent</th>
+     <th style="text-align: right;">Leads</th>
+     <th style="text-align: right;">ROI</th>
+     <th style="text-align: center;">Actions</th>
+    </tr>
+   </thead>
+   <tbody>
+    <tr data-status="active">
+     <td><strong>Summer Sale 2024</strong><br><span class="muted" style="font-size: 12px;">Seasonal promotion</span></td>
+     <td><span class="badge" style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3);">Social Media</span></td>
+     <td>Oct 01, 2024</td>
+     <td><span class="badge" style="color:#10b981; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.3);">✓ Active</span></td>
+     <td style="text-align: right;">₹3,000</td>
+     <td style="text-align: right; font-weight: 600;">₹2,400</td>
+     <td style="text-align: right; font-weight: 600;">285</td>
+     <td style="text-align: right; font-weight: 700; color: #10b981;">450%</td>
+     <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('summer')">View</button></td>
+    </tr>
+    <tr data-status="active">
+     <td><strong>Q4 Webinar Series</strong><br><span class="muted" style="font-size: 12px;">Educational content</span></td>
+     <td><span class="badge" style="background:rgba(34,211,238,0.15); border-color:rgba(34,211,238,0.3);">Email</span></td>
+     <td>Sep 15, 2024</td>
+     <td><span class="badge" style="color:#10b981; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.3);">✓ Active</span></td>
+     <td style="text-align: right;">₹1,200</td>
+     <td style="text-align: right; font-weight: 600;">₹850</td>
+     <td style="text-align: right; font-weight: 600;">142</td>
+     <td style="text-align: right; font-weight: 700; color: #10b981;">320%</td>
+     <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('webinar')">View</button></td>
+    </tr>
+    <tr data-status="paused">
+     <td><strong>Brand Awareness</strong><br><span class="muted" style="font-size: 12px;">Display advertising</span></td>
+     <td><span class="badge" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3);">PPC</span></td>
+     <td>Aug 20, 2024</td>
+     <td><span class="badge" style="color:#f59e0b; background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3);"> Paused</span></td>
+     <td style="text-align: right;">₹6,000</td>
+     <td style="text-align: right; font-weight: 600;">₹5,100</td>
+     <td style="text-align: right; font-weight: 600;">380</td>
+     <td style="text-align: right; font-weight: 600;">110%</td>
+     <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('brand')">View</button></td>
+    </tr>
+    <tr data-status="active">
+     <td><strong>Retargeting Campaign</strong><br><span class="muted" style="font-size: 12px;">Conversion optimization</span></td>
+     <td><span class="badge" style="background:rgba(139,92,246,0.15); border-color:rgba(139,92,246,0.3);">Display Ads</span></td>
+     <td>Sep 01, 2024</td>
+     <td><span class="badge" style="color:#10b981; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.3);">✓ Active</span></td>
+     <td style="text-align: right;">₹1,500</td>
+     <td style="text-align: right; font-weight: 600;">₹1,200</td>
+     <td style="text-align: right; font-weight: 600;">95</td>
+     <td style="text-align: right; font-weight: 700; color: #10b981;">210%</td>
+     <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('retarget')">View</button></td>
+    </tr>
+    <tr data-status="completed">
+     <td><strong>Product Launch</strong><br><span class="muted" style="font-size: 12px;">New feature announcement</span></td>
+     <td><span class="badge" style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3);">Social Media</span></td>
+     <td>Jul 10, 2024</td>
+     <td><span class="badge" style="color:#64748b; background:rgba(100,116,139,0.15); border-color:rgba(100,116,139,0.3);">✓ Completed</span></td>
+     <td style="text-align: right;">₹4,500</td>
+     <td style="text-align: right; font-weight: 600;">₹4,500</td>
+     <td style="text-align: right; font-weight: 600;">520</td>
+     <td style="text-align: right; font-weight: 700; color: #10b981;">580%</td>
+     <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('launch')">View</button></td>
+    </tr>
+    <tr data-status="active">
+     <td><strong>Holiday Special</strong><br><span class="muted" style="font-size: 12px;">Limited time offer</span></td>
+     <td><span class="badge" style="background:rgba(34,211,238,0.15); border-color:rgba(34,211,238,0.3);">Email</span></td>
+     <td>Oct 15, 2024</td>
+     <td><span class="badge" style="color:#10b981; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.3);">✓ Active</span></td>
+     <td style="text-align: right;">₹2,000</td>
+     <td style="text-align: right; font-weight: 600;">₹1,450</td>
+     <td style="text-align: right; font-weight: 600;">168</td>
+     <td style="text-align: right; font-weight: 700; color: #10b981;">275%</td>
+     <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('holiday')">View</button></td>
+    </tr>
+   </tbody>
+  </table>
+ </div>
+  </section>
+
+  <!-- AI PREDICTOR -->
+  <section id="campaignPredictor">
+<!-- AI Campaign Prediction Panel -->
+<div class="card" style="margin-bottom: 24px;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+  <div>
+   <h3><i data-lucide="bot" class="icon-sm text-purple-500"></i> AI Campaign Predictor</h3>
+   <p class="muted" style="font-size: 13px;">Predict customer subscription likelihood using Random Forest Classifier</p>
+  </div>
+ </div>
+ <div class="grid two" style="gap: 16px;">
+  <div>
+   <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Customer Age</label>
+   <input type="number" id="predAge" placeholder="35" style="width: 100%;" value="35">
+  </div>
+  <div>
+   <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Job Type</label>
+   <select id="predJob" title="Job type" style="width: 100%;">
+    <option value="management">Management</option>
+    <option value="technician">Technician</option>
+    <option value="entrepreneur">Entrepreneur</option>
+    <option value="blue-collar">Blue Collar</option>
+    <option value="retired">Retired</option>
+    <option value="admin.">Admin</option>
+    <option value="services">Services</option>
+   </select>
+  </div>
+  <div>
+   <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Account Balance</label>
+   <input type="number" id="predBalance" placeholder="1500" style="width: 100%;" value="1500">
+  </div>
+  <div>
+   <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Call Duration (sec)</label>
+   <input type="number" id="predDuration" placeholder="300" style="width: 100%;" value="300">
+  </div>
+  <div>
+   <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Contact Method</label>
+   <select id="predContact" title="Contact method" style="width: 100%;">
+    <option value="cellular">Cellular</option>
+    <option value="telephone">Telephone</option>
+   </select>
+  </div>
+  <div>
+   <label class="muted" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Previous Campaign</label>
+   <select id="predPrevious" title="Previous campaign contacts" style="width: 100%;">
+    <option value="0">No contact</option>
+    <option value="1">1 contact</option>
+    <option value="2">2+ contacts</option>
+   </select>
+  </div>
+ </div>
+ <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+  <button class="btn-premium" onclick="predictCampaign()"> Predict Outcome</button>
+ </div>
+ <div id="predictionResult" style="margin-top: 16px; display: none;">
+  <div id="predictionResultBox" style="padding: 16px; border-radius: 8px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); transition: all 0.3s ease;">
+   <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+     <div style="font-weight: 600; margin-bottom: 4px;">AI Prediction Result</div>
+     <div id="predictionText" class="muted" style="font-size: 13px;"></div>
+    </div>
+    <div id="predictionScore" style="font-size: 32px; font-weight: 800;"></div>
+   </div>
+   <div style="margin-top: 12px; height: 8px; background: rgba(148,163,184,0.2); border-radius: 4px; overflow: hidden;">
+    <div id="predictionBar" style="height: 100%; width: 0%; border-radius: 4px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;"></div>
+   </div>
+  </div>
+ </div>
+</div>
+  </section>
+
+</div>
+
+<!-- New Campaign Modal -->
+<div id="modalNewCampaign" class="modal-overlay glassmorphism-overlay">
+ <div class="modal glass-modal">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+   <h3 style="margin: 0; font-family: 'Google Sans Display', sans-serif;">Launch New Campaign</h3>
+   <button type="button" class="icon-btn" onclick="closeNewCampaignModal()" style="border: none; background: rgba(255,255,255,0.1); color: #fff;">✕</button>
+  </div>
+  <form onsubmit="saveCampaign(event)">
+   <div class="grid two" style="gap: 16px;">
+    <div style="grid-column: 1 / -1;">
+     <label class="glass-label">Campaign Name</label>
+     <input type="text" id="campaignName" class="glass-input" placeholder="e.g. Q3 Growth Push" required>
+    </div>
+    
+    <div>
+     <label class="glass-label">Platform</label>
+     <select id="campaignPlatform" class="glass-input" required>
+      <option value="">Select Platform</option>
+      <option value="Instagram">Instagram</option>
+      <option value="Facebook">Facebook</option>
+      <option value="LinkedIn">LinkedIn</option>
+      <option value="Google Ads">Google Ads</option>
+      <option value="WhatsApp">WhatsApp</option>
+      <option value="Email Marketing">Email Marketing</option>
+     </select>
+    </div>
+    
+    <div>
+     <label class="glass-label">Campaign Type</label>
+     <select id="campaignType" class="glass-input" required>
+      <option value="">Select Type</option>
+      <option value="Social Media">Social Media</option>
+      <option value="Paid Ads">Paid Ads</option>
+      <option value="Email Campaign">Email Campaign</option>
+      <option value="Influencer Marketing">Influencer Marketing</option>
+      <option value="SEO Campaign">SEO Campaign</option>
+     </select>
+    </div>
+
+    <div>
+     <label class="glass-label">Campaign Goal</label>
+     <select id="campaignGoal" class="glass-input" required>
+      <option value="">Select Goal</option>
+      <option value="Lead Generation">Lead Generation</option>
+      <option value="Product Sales">Product Sales</option>
+      <option value="Brand Awareness">Brand Awareness</option>
+      <option value="User Growth">User Growth</option>
+      <option value="Engagement">Engagement</option>
+     </select>
+    </div>
+
+    <div>
+     <label class="glass-label">Target Audience</label>
+     <input type="text" id="campaignAudience" class="glass-input" placeholder="e.g. Gen Z, Tech Founders" required>
+    </div>
+
+    <div>
+     <label class="glass-label">Budget ($)</label>
+     <input type="number" id="campaignBudget" class="glass-input" placeholder="50000" min="1" required>
+    </div>
+
+    <div>
+     <label class="glass-label">Duration (days)</label>
+     <input type="number" id="campaignDuration" class="glass-input" placeholder="30" min="1" required>
+    </div>
+    
+    <div style="grid-column: 1 / -1;">
+     <label class="glass-label">Start Date</label>
+     <input type="date" id="campaignDate" class="glass-input" required>
+    </div>
+
+    <div style="grid-column: 1 / -1; display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px;">
+     <button type="button" class="btn-premium" onclick="closeNewCampaignModal()" >Cancel</button>
+     <button type="submit" class="btn-premium" >Save Campaign</button>
+    </div>
+   </div>
+  </form>
+ </div>
+</div>
+
+<!-- Details Modal -->
+<div id="modalCampaignDetails" class="modal-overlay glassmorphism-overlay">
+ <div class="modal glass-modal">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+   <h3 style="margin: 0; font-family: 'Google Sans Display', sans-serif;">Campaign Analytics</h3>
+   <button type="button" class="icon-btn" onclick="closeDetailsModal()" style="border: none; background: rgba(255,255,255,0.1); color: #fff;">✕</button>
+  </div>
+  <div id="detailsModalContent" style="color: #e5e7eb;"></div>
+ </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
+
+<style>
+/* Glassmorphism UI & Campaign Cards CSS */
+.glassmorphism-overlay {
+ background: rgba(15, 23, 42, 0.75);
+ backdrop-filter: blur(8px);
+ -webkit-backdrop-filter: blur(8px);
+}
+.glass-modal {
+ background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+ border: 1px solid rgba(255, 255, 255, 0.1);
+ box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+ color: #fff;
+ transform: scale(0.95);
+ transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.modal-overlay.open .glass-modal {
+ transform: scale(1);
+}
+.glass-label {
+ font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px; color: rgba(255,255,255,0.8);
+}
+.glass-input {
+ width: 100%;
+ background: rgba(15, 23, 42, 0.6) !important;
+ border: 1px solid rgba(255,255,255,0.1) !important;
+ color: #fff !important;
+}
+.glass-input:focus {
+ border-color: #6366f1 !important;
+ box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+}
+.glass-input option {
+ background: #1e293b;
+ color: #fff;
+}
+.active-campaigns-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+ gap: 20px;
+}
+
+
+[data-theme="dark"] 
+
+
+.campaign-card:hover::before {
+ opacity: 1;
+}
+@keyframes fadeInCard {
+ from { opacity: 0; transform: translateY(10px); }
+ to { opacity: 1; transform: translateY(0); }
+}
+.toast-msg {
+ background: linear-gradient(135deg, #10b981, #059669);
+ color: #fff;
+ padding: 12px 20px;
+ border-radius: 8px;
+ box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ font-weight: 500;
+ animation: slideInToast 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slideInToast {
+ from { transform: translateX(100%); opacity: 0; }
+ to { transform: translateX(0); opacity: 1; }
+}
+.toast-fade-out {
+ animation: fadeOutToast 0.3s ease forwards;
+}
+@keyframes fadeOutToast {
+ to { transform: translateX(100%); opacity: 0; }
+}
+.c-badge {
+ padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+}
+.c-badge.high-impact { background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); }
+.c-badge.growing { background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); }
+.c-badge.starter { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.c-stats-grid {
+ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;
+ background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px;
+}
+[data-theme="dark"] .c-stats-grid { background: rgba(255,255,255,0.02); }
+.c-stat-item { display: flex; flex-direction: column; gap: 4px; }
+.c-stat-label { font-size: 11px; color: var(--color-muted); text-transform: uppercase; }
+.c-stat-value { font-size: 14px; font-weight: 600; color: var(--color-text); }
+
+#activeCampaignsList {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(420px,1fr));
+  gap:28px;
+}
+
+.campaign-card {
+  position:relative;
+  overflow:hidden;
+  background: linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.75));
+  border: 1px solid rgba(139,92,246,0.18);
+  border-radius:28px;
+  padding:28px;
+  backdrop-filter: blur(18px);
+  transition: all 0.35s ease;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+}
+
+.campaign-card::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  background: radial-gradient(circle at top right, rgba(139,92,246,0.18), transparent 40%);
+  pointer-events:none;
+}
+
+.campaign-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  border-color:#8b5cf6;
+  box-shadow: 0 18px 50px rgba(139,92,246,0.25);
+}
+
+.campaign-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:24px;
+}
+
+.campaign-title-wrap {
+  display:flex;
+  gap:18px;
+  align-items:center;
+}
+
+.campaign-icon {
+  width:64px;
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:20px;
+  font-size:28px;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  box-shadow: 0 10px 25px rgba(139,92,246,0.35);
+}
+
+.campaign-title-wrap h3 {
+  color:white;
+  font-size:28px;
+  font-weight:700;
+  margin-bottom:6px;
+  margin-top: 0;
+}
+
+.platform-text {
+  color:#a78bfa;
+  font-size:15px;
+  margin: 0;
+}
+
+.status-chip {
+  padding:10px 18px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  background: rgba(255,255,255,0.1);
+  color: #cbd5e1;
+}
+
+.status-chip.active {
+  background: rgba(34,197,94,0.15);
+  color:#22c55e;
+  border: 1px solid rgba(34,197,94,0.3);
+}
+
+.stats-grid {
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap:18px;
+  margin-bottom:24px;
+}
+
+.mini-stat {
+  background: rgba(255,255,255,0.04);
+  border-radius:18px;
+  padding:18px;
+}
+
+.mini-stat span {
+  display:block;
+  color:#94a3b8;
+  font-size:13px;
+  margin-bottom:8px;
+}
+
+.mini-stat strong {
+  color:white;
+  font-size:20px;
+}
+
+.roi-value {
+  color:#22c55e !important;
+}
+
+.roi-section {
+  margin-bottom:28px;
+}
+
+.roi-labels {
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.roi-bar {
+  width:100%;
+  height:12px;
+  background: rgba(255,255,255,0.05);
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.roi-fill {
+  height:100%;
+  border-radius:999px;
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  box-shadow: 0 0 18px rgba(139,92,246,0.45);
+}
+
+.campaign-buttons {
+  display:flex;
+  gap:14px;
+}
+
+.analytics-btn,
+.delete-btn {
+  flex:1;
+  border:none;
+  padding:16px;
+  border-radius:16px;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.analytics-btn {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color:white;
+}
+
+.analytics-btn:hover {
+  transform:translateY(-3px);
+  box-shadow: 0 12px 30px rgba(139,92,246,0.35);
+}
+
+.delete-btn {
+  background: rgba(239,68,68,0.12);
+  color:#ef4444;
+}
+
+.delete-btn:hover {
+  background:#ef4444;
+  color:white;
+}
+</style>

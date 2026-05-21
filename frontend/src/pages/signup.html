@@ -1,0 +1,108 @@
+<div class="page-header" style="text-align: center;">
+ <h2>Create Account</h2>
+ <p class="lead muted">Get started in minutes. No credit card required.</p>
+</div>
+
+<div style="display: flex; justify-content: center; align-items: flex-start; min-height: 60vh; padding: 20px 0;">
+ <form class="card" id="signupForm" onsubmit="event.preventDefault()" style="width: 100%; max-width: 420px; padding: 32px;">
+  <div style="text-align: center; margin-bottom: 24px;">
+   <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--color-primary), #8b5cf6); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: white; font-size: 28px; font-weight: 700;">S</div>
+   <h3 style="margin: 0; font-size: 20px;">Sign Up</h3>
+   <p class="muted" style="margin: 8px 0 0; font-size: 14px;">Create your account to get started</p>
+  </div>
+  
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+   <div>
+    <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Full Name</label>
+    <input type="text" id="suName" required placeholder="Your full name" style="width: 100%;" />
+   </div>
+   
+   <div>
+    <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Email Address</label>
+    <input type="email" id="suEmail" required placeholder="you@example.com" style="width: 100%;" />
+   </div>
+   
+   <div>
+    <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Password</label>
+    <input type="password" id="suPassword" required placeholder="••••••••" style="width: 100%;" />
+   </div>
+   
+   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div>
+     <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Country</label>
+     <select id="suCountry" style="width: 100%;" title="Select your country">
+      <option value="">Select Country</option>
+      <option value="IN" selected>India</option>
+      <option value="US">United States</option>
+      <option value="UK">United Kingdom</option>
+      <option value="CA">Canada</option>
+      <option value="AU">Australia</option>
+      <option value="DE">Germany</option>
+      <option value="FR">France</option>
+      <option value="JP">Japan</option>
+      <option value="SG">Singapore</option>
+      <option value="AE">UAE</option>
+     </select>
+    </div>
+    <div>
+     <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Company Name</label>
+     <input type="text" id="suCompany" placeholder="Your company" style="width: 100%;" />
+    </div>
+   </div>
+  </div>
+  
+  <div style="margin-top: 24px;">
+   <button class="btn-premium" type="submit" style="width: 100%; justify-content: center; padding: 12px;">Create Account</button>
+  </div>
+  
+  <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border);">
+   <p class="muted" style="margin: 0; font-size: 14px;">Already have an account? <a href="#/login" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">Sign In</a></p>
+  </div>
+ </form>
+</div>
+
+<script>
+ (function(){
+  document.getElementById('signupForm')?.addEventListener('submit', (e)=>{
+   e.preventDefault();
+   const name = document.getElementById('suName')?.value || 'User';
+   const email = document.getElementById('suEmail')?.value || 'user@example.com';
+   const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+   const country = document.getElementById('suCountry')?.value || 'IN';
+   const company = document.getElementById('suCompany')?.value || '';
+   
+   // Save to saasCustomers for CRM
+   const existingCustomers = JSON.parse(localStorage.getItem('saasCustomers') || '[]');
+   existingCustomers.push({
+    id: 'user_' + Date.now(),
+    fullName: name,
+    email: email,
+    startupName: company || 'My Startup',
+    startupIndustry: 'Technology',
+    subscriptionPlan: 'free',
+    joinedDate: new Date().toISOString(),
+    activityLevel: 'Active',
+    aiToolsUsed: 1,
+    status: 'New Signup',
+    lastActive: new Date().toISOString(),
+    forecastsCreated: 0,
+    campaignsCreated: 0,
+    segmentationReports: 0,
+    crmInteractions: 0
+   });
+   localStorage.setItem('saasCustomers', JSON.stringify(existingCustomers));
+
+   // Use Auth system
+   if (typeof Auth !== 'undefined') {
+    Auth.login({ email, name, initials, country, company });
+    location.hash = '#/dashboard';
+   } else {
+    // Fallback
+    localStorage.setItem('user', JSON.stringify({ email, name, initials, country, company }));
+    location.hash = '#/dashboard';
+   }
+  });
+ })();
+</script>
+
+

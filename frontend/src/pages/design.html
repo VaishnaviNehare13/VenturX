@@ -1,0 +1,274 @@
+<div class="page-header">
+ <h2>Design Studio</h2>
+ <p class="lead muted">Manage brand assets and preview styles in real time.</p>
+</div>
+<div class="grid two" style="margin-top:0;">
+ <div class="card">
+  <h3>Brand Assets</h3>
+  <div class="muted">Upload logo and provide brand guidelines.</div>
+  <div style="margin-top:8px; display:grid; gap:8px;">
+   <label>Logo <input type="file" id="baLogo" accept="image/*" /></label>
+   <label>Brand Guidelines (PDF) <input type="file" id="baGuide" accept="application/pdf" /></label>
+   <label>Primary Color <input type="color" id="baPrimary" value="#2563eb"/></label>
+   <label>Accent Color <input type="color" id="baAccent" value="#14b8a6"/></label>
+   <label>Typography <select id="baFont"><option>Inter</option><option>Roboto</option><option>Source Sans</option></select></label>
+  </div>
+ </div>
+ <div class="card">
+  <h3>Preview Panel</h3>
+  <div id="baPreview" style="display:grid;gap:8px">
+   <div id="baLogoPreview" style="width:96px;height:96px;background:rgba(148,163,184,0.2);border-radius:12px;display:grid;place-items:center">Logo</div>
+   <div style="display:flex;gap:8px;align-items:center">
+    <div id="baSwatch1" style="width:28px;height:28px;border-radius:8px;background:#2563eb"></div>
+    <div id="baSwatch2" style="width:28px;height:28px;border-radius:8px;background:#14b8a6"></div>
+    <div id="baFontPreview" class="muted">Sample typography preview</div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div class="grid two" style="margin-top:16px;">
+ <div class="card">
+  <h3>Logo Generator</h3>
+  <div class="muted">Generate a simple text-based logo with icon, color, and style.</div>
+  <div style="display:grid;gap:8px;margin-top:8px;">
+   <label>Brand Text <input type="text" id="lgText" placeholder="TechNova" /></label>
+   <label>Font <select id="lgFont">
+    <option value="bold 48px Inter">Bold</option>
+    <option value="600 48px Inter">Semi-bold</option>
+    <option value="400 48px Inter">Regular</option>
+   </select></label>
+   <label>Color <input type="color" id="lgColor" value="#2563eb"/></label>
+   <label>Icon <select id="lgIcon">
+    <option value="★">Star</option>
+    <option value="◆">Diamond</option>
+    <option value="●">Dot</option>
+    <option value="">Play</option>
+   </select></label>
+   <div style="display:flex;gap:8px;align-items:center;">
+    <button class="btn-premium" id="lgGenerate">Generate</button>
+    <button class="btn-premium" id="lgDownload">Download PNG</button>
+   </div>
+   <canvas id="lgCanvas" width="600" height="240" style="width:100%;background:rgba(148,163,184,0.08);border-radius:12px"></canvas>
+  </div>
+ </div>
+ 
+ <div class="card">
+  <h3>Poster Generator</h3>
+  <div class="muted">Create a simple promotional poster with gradient background.</div>
+  <div style="display:grid;gap:8px;margin-top:8px;">
+   <label>Title <input type="text" id="pgTitle" placeholder="Summer Launch" /></label>
+   <label>Subtitle <input type="text" id="pgSubtitle" placeholder="All-in-one dashboard" /></label>
+   <label>Gradient <select id="pgGradient">
+    <option value="#2563eb,#14b8a6">Blue → Teal</option>
+    <option value="#8b5cf6,#ec4899">Violet → Pink</option>
+    <option value="#ff6b6b,#ffd166">Coral → Warm</option>
+   </select></label>
+   <div style="display:flex;gap:8px;align-items:center;">
+    <button class="btn-premium" id="pgGenerate">Generate</button>
+    <button class="btn-premium" id="pgDownload">Download PNG</button>
+   </div>
+   <canvas id="pgCanvas" width="800" height="1000" style="width:100%;background:rgba(148,163,184,0.08);border-radius:12px"></canvas>
+  </div>
+ </div>
+</div>
+
+<div class="grid two" style="margin-top:16px;">
+ <div class="card">
+  <h3>Templates</h3>
+  <div class="muted">Ready-to-use templates for campaigns, emails, and social posts.</div>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;">
+   <div class="card" style="padding:8px;">Campaign A</div>
+   <div class="card" style="padding:8px;">Email B</div>
+   <div class="card" style="padding:8px;">Social C</div>
+  </div>
+ </div>
+ <div class="card">
+  <h3>Asset Library</h3>
+  <div class="muted">Images, icons, and banners.</div>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px;" id="baLibrary"></div>
+  <div style="margin-top:8px;display:flex;gap:8px;">
+   <input type="file" id="baAssetUpload" accept="image/*" multiple />
+   <button class="btn-premium" id="baExport">Export Selected</button>
+  </div>
+ </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+ <h3>Brand Name Generator</h3>
+ <div class="muted">Generate catchy brand names from a prompt and style preferences.</div>
+ <div style="display:grid;gap:8px;margin-top:8px;">
+  <label>Prompt / Keywords <input type="text" id="bnPrompt" placeholder="AI analytics for startups" /></label>
+  <label>Style <select id="bnStyle">
+   <option>Modern</option>
+   <option>Minimal</option>
+   <option>Playful</option>
+   <option>Techy</option>
+   <option>Luxury</option>
+  </select></label>
+  <div style="display:flex;gap:8px;align-items:center;">
+   <button class="btn-premium" id="bnGenerate">Generate Names</button>
+   <button class="btn-premium" id="bnCopy">Copy All</button>
+  </div>
+  <div id="bnResults" class="muted" style="display:grid;gap:6px;margin-top:6px;"></div>
+ </div>
+</div>
+
+<script>
+ (function initDesign(){
+  const baLogo = document.getElementById('baLogo');
+  const baGuide = document.getElementById('baGuide');
+  const baPrimary = document.getElementById('baPrimary');
+  const baAccent = document.getElementById('baAccent');
+  const baFont = document.getElementById('baFont');
+  const baLogoPreview = document.getElementById('baLogoPreview');
+  const baSwatch1 = document.getElementById('baSwatch1');
+  const baSwatch2 = document.getElementById('baSwatch2');
+  const baFontPreview = document.getElementById('baFontPreview');
+  baLogo?.addEventListener('change', (e)=>{
+   const file = e.target.files?.[0]; if (!file) return;
+   const url = URL.createObjectURL(file);
+   if (baLogoPreview) baLogoPreview.innerHTML = `<img src='${url}' alt='Logo' style='width:100%;height:100%;object-fit:cover;border-radius:12px'/>`;
+  });
+  baPrimary?.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--color-primary', baPrimary.value); baSwatch1.style.background = baPrimary.value; });
+  baAccent?.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--color-accent', baAccent.value); baSwatch2.style.background = baAccent.value; });
+  baFont?.addEventListener('change', ()=>{ baFontPreview.style.fontFamily = baFont.value + ", sans-serif"; });
+
+  // Asset library
+  const baLibrary = document.getElementById('baLibrary');
+  const baAssetUpload = document.getElementById('baAssetUpload');
+  const selected = new Set();
+  function renderAsset(url){
+   const id = Math.random().toString(36).slice(2);
+   const card = document.createElement('div');
+   card.className = 'card';
+   card.style.padding = '4px';
+   card.innerHTML = `<img src='${url}' style='width:100%;height:80px;object-fit:cover;border-radius:8px'/>`;
+   card.addEventListener('click', ()=>{
+    if (selected.has(id)) { selected.delete(id); card.style.outline = ''; }
+    else { selected.add(id); card.style.outline = '2px solid var(--color-secondary)'; }
+   });
+   baLibrary?.appendChild(card);
+  }
+  baAssetUpload?.addEventListener('change', (e)=>{
+   const files = Array.from(e.target.files || []);
+   files.forEach(f => { const url = URL.createObjectURL(f); renderAsset(url); });
+  });
+  document.getElementById('baExport')?.addEventListener('click', ()=>{
+   // Placeholder export: downloads first selected image if any
+   const img = baLibrary?.querySelector('div[style*="outline"] img');
+   if (img) { const a = document.createElement('a'); a.href = img.src; a.download = 'asset.png'; a.click(); }
+  });
+
+  // Logo Generator
+  const lgText = document.getElementById('lgText');
+  const lgFont = document.getElementById('lgFont');
+  const lgColor = document.getElementById('lgColor');
+  const lgIcon = document.getElementById('lgIcon');
+  const lgCanvas = document.getElementById('lgCanvas');
+  const lgCtx = lgCanvas?.getContext && lgCanvas.getContext('2d');
+  function drawLogo(){
+   if (!lgCtx) return;
+   const text = (lgText?.value || 'TechNova');
+   const font = (lgFont?.value || 'bold 48px Inter');
+   const color = (lgColor?.value || '#2563eb');
+   const icon = (lgIcon?.value || '★');
+   lgCtx.clearRect(0,0,lgCanvas.width, lgCanvas.height);
+   // background
+   const bg = lgCtx.createLinearGradient(0,0,lgCanvas.width,lgCanvas.height);
+   bg.addColorStop(0,'rgba(148,163,184,0.08)');
+   bg.addColorStop(1,'rgba(99,102,241,0.12)');
+   lgCtx.fillStyle = bg; lgCtx.fillRect(0,0,lgCanvas.width, lgCanvas.height);
+   // icon circle
+   lgCtx.save();
+   lgCtx.translate(80,120);
+   lgCtx.fillStyle = color;
+   lgCtx.beginPath(); lgCtx.arc(0,0,44,0,Math.PI*2); lgCtx.fill();
+   lgCtx.fillStyle = '#fff';
+   lgCtx.font = 'bold 36px Inter';
+   lgCtx.textAlign = 'center'; lgCtx.textBaseline = 'middle';
+   lgCtx.fillText(icon, 0, 0);
+   lgCtx.restore();
+   // text
+   lgCtx.fillStyle = color;
+   lgCtx.font = font;
+   lgCtx.textAlign = 'left'; lgCtx.textBaseline = 'middle';
+   lgCtx.shadowColor = 'rgba(0,0,0,0.25)'; lgCtx.shadowBlur = 10; lgCtx.shadowOffsetY = 4;
+   lgCtx.fillText(text, 150, 120);
+   lgCtx.shadowBlur = 0;
+  }
+  document.getElementById('lgGenerate')?.addEventListener('click', drawLogo);
+  document.getElementById('lgDownload')?.addEventListener('click', ()=>{
+   if (!lgCanvas) return; const link = document.createElement('a');
+   link.download = 'logo.png'; link.href = lgCanvas.toDataURL('image/png'); link.click();
+  });
+
+  // Poster Generator
+  const pgCanvas = document.getElementById('pgCanvas');
+  const pgCtx = pgCanvas?.getContext && pgCanvas.getContext('2d');
+  function drawPoster(){
+   if (!pgCtx) return;
+   const title = document.getElementById('pgTitle')?.value || 'Summer Launch';
+   const subtitle = document.getElementById('pgSubtitle')?.value || 'All-in-one dashboard';
+   const grad = (document.getElementById('pgGradient')?.value || '#2563eb,#14b8a6').split(',');
+   pgCtx.clearRect(0,0,pgCanvas.width, pgCanvas.height);
+   const g = pgCtx.createLinearGradient(0,0,pgCanvas.width, pgCanvas.height);
+   g.addColorStop(0, grad[0]); g.addColorStop(1, grad[1]);
+   pgCtx.fillStyle = g; pgCtx.fillRect(0,0,pgCanvas.width, pgCanvas.height);
+   // overlay pattern
+   pgCtx.fillStyle = 'rgba(255,255,255,0.08)';
+   for (let i=0;i<20;i++){ pgCtx.fillRect(40*i, 0, 2, pgCanvas.height); }
+   // text
+   pgCtx.fillStyle = '#fff';
+   pgCtx.font = '800 96px Inter';
+   pgCtx.textAlign = 'center';
+   pgCtx.fillText(title, pgCanvas.width/2, 380);
+   pgCtx.font = '400 40px Inter';
+   pgCtx.fillText(subtitle, pgCanvas.width/2, 460);
+   // call to action
+   pgCtx.font = '600 32px Inter';
+   pgCtx.fillText('VenturX', pgCanvas.width/2, 800);
+  }
+  document.getElementById('pgGenerate')?.addEventListener('click', drawPoster);
+  document.getElementById('pgDownload')?.addEventListener('click', ()=>{
+   if (!pgCanvas) return; const link = document.createElement('a');
+   link.download = 'poster.png'; link.href = pgCanvas.toDataURL('image/png'); link.click();
+  });
+
+  // Brand Name Generator
+  function generateNames(prompt, style){
+   const base = (prompt || 'startup').toLowerCase().replace(/[^a-z0-9 ]/g,' ').trim();
+   const words = base.split(/\s+/).filter(Boolean);
+   const cores = words.length ? words : ['nova','data','metric','spark','pulse','core'];
+   const suffixes = {
+    'Modern': ['ly','io','lab','hub','grid','stack','base','flow','forge'],
+    'Minimal': ['co','one','mono','lite','nano','simple','plain'],
+    'Playful': ['buddy','bee','bloom','panda','pals','pop','sparkle'],
+    'Techy': ['tech','byte','bit','ai','sync','ops','bot','ware'],
+    'Luxury': ['luxe','prime','atelier','couture','elite','royale','aure'],
+   }[style] || ['ly','io','hub'];
+   const results = new Set();
+   for (let i=0;i<20 && results.size<16;i++){
+    const c = cores[Math.floor(Math.random()*cores.length)];
+    const s = suffixes[Math.floor(Math.random()*suffixes.length)];
+    const name = (c + s).replace(/\b\w/g,c=>c.toUpperCase());
+    results.add(name);
+   }
+   return Array.from(results);
+  }
+  document.getElementById('bnGenerate')?.addEventListener('click', ()=>{
+   const prompt = document.getElementById('bnPrompt')?.value || '';
+   const style = document.getElementById('bnStyle')?.value || 'Modern';
+   const names = generateNames(prompt, style);
+   const out = document.getElementById('bnResults');
+   if (out) out.innerHTML = names.map(n=>`<div class='card' style='padding:8px;'>${n}</div>`).join('');
+  });
+  document.getElementById('bnCopy')?.addEventListener('click', ()=>{
+   const out = document.getElementById('bnResults');
+   const text = out ? Array.from(out.querySelectorAll('div')).map(d=>d.textContent).join('\n') : '';
+   if (text) navigator.clipboard.writeText(text);
+  });
+ })();
+</script>
+
+

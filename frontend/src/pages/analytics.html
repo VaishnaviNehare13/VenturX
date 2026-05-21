@@ -1,0 +1,325 @@
+<style>
+.kpi-grid-6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.insights-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.insight-item { padding: 12px 16px; background: rgba(0,0,0,0.2); border-left: 3px solid #6366f1; border-radius: 6px; display: flex; gap: 12px; align-items: flex-start; transition: transform 0.2s; }
+.insight-item:hover { transform: translateX(4px); background: rgba(99,102,241,0.05); }
+.insight-icon { font-size: 18px; margin-top: -2px; }
+.insight-text { font-size: 13.5px; color: #e5e7eb; line-height: 1.4; }
+.insight-time { font-size: 11px; color: #94a3b8; display: block; margin-top: 4px; }
+.health-score-container { display: flex; justify-content: center; align-items: center; height: 100%; position: relative; }
+
+.interactive-card { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.interactive-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 12px rgba(99,102,241,0.2); }
+.interactive-item { cursor: pointer; }
+.table-sortable th { cursor: pointer; user-select: none; transition: color 0.2s; }
+.table-sortable th:hover { color: #f8fafc; }
+.table-sortable tr.interactive-row { cursor: pointer; transition: background 0.2s; }
+.table-sortable tr.interactive-row:hover { background: rgba(255,255,255,0.05); }
+
+/* Activity Feed */
+.activity-feed { max-height: 220px; overflow-y: auto; padding-right: 8px; }
+.activity-feed::-webkit-scrollbar { width: 4px; }
+.activity-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.activity-item { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 12px; align-items: flex-start; animation: slideInRight 0.3s ease-out forwards; }
+.activity-item:last-child { border-bottom: none; }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* Modals */
+.bi-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.bi-modal.open { opacity: 1; pointer-events: auto; }
+.bi-modal-content { background: #0f172a; border: 1px solid rgba(99,102,241,0.3); border-radius: 12px; width: 90%; max-width: 700px; padding: 24px; position: relative; transform: translateY(20px); transition: transform 0.3s; box-shadow: 0 24px 48px rgba(0,0,0,0.5); }
+.bi-modal.open .bi-modal-content { transform: translateY(0); }
+.bi-modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; line-height: 1; }
+.bi-modal-close:hover { color: #fff; }
+
+.radial-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 20px; margin-top: 24px; }
+.radial-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.radial-circle { position: relative; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--fill-color) var(--perc), rgba(255,255,255,0.1) 0); margin-bottom: 8px; transition: --perc 1s; }
+.radial-circle::after { content: ''; position: absolute; inset: 6px; background: #0f172a; border-radius: 50%; }
+.radial-circle span { position: relative; z-index: 1; font-size: 15px; font-weight: 700; color: #fff; }
+</style>
+
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+ <div>
+  <h2>AI Business Intelligence Center</h2>
+  <p class="lead muted">Executive dashboard for startup performance, usage metrics, and automated AI insights.</p>
+ </div>
+ <div style="display: flex; gap: 12px; align-items: center;">
+  <select id="globalDateFilter" class="form-input" style="font-size: 13px; padding: 8px 12px; width: auto; background: rgba(0,0,0,0.3);" onchange="applyGlobalFilter()">
+   <option value="7">Last 7 Days</option>
+   <option value="30" selected>Last 30 Days</option>
+   <option value="90">Last 90 Days</option>
+  </select>
+ </div>
+</div>
+
+<!-- Executive KPIs -->
+<div class="kpi-grid-6">
+ <div class="card kpi interactive-card" onclick="openKpiModal('Total Users')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)"><i data-lucide="users" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Total Users</h3>
+   <div class="kpi-value" id="kpiTotalUsers">Loading...</div>
+   <div class="kpi-meta"><span class="trend-up">+14.2%</span><span class="muted" style="font-size: 12px;">vs last month</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Startup Growth')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#10b981,#059669)"><i data-lucide="zap" class="icon-sm text-amber-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Startup Growth</h3>
+   <div class="kpi-value" id="kpiStartupGrowth">Loading...</div>
+   <div class="kpi-meta"><span class="trend-up">+8.5%</span><span class="muted" style="font-size: 12px;">new signups</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('AI Tool Usage')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)"></div>
+  <div>
+   <h3 class="kpi-title">AI Tool Usage</h3>
+   <div class="kpi-value" id="kpiAiUsage">Loading...</div>
+   <div class="kpi-meta"><span class="trend-up">+22.4%</span><span class="muted" style="font-size: 12px;">queries ran</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Customer Retention')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"></div>
+  <div>
+   <h3 class="kpi-title">Customer Retention</h3>
+   <div class="kpi-value" id="kpiRetention">Loading...</div>
+   <div class="kpi-meta"><span class="trend-down">-2.1%</span><span class="muted" style="font-size: 12px;">churn risk</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Campaign Reach')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#ec4899,#db2777)"><i data-lucide="megaphone" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Campaign Reach</h3>
+   <div class="kpi-value" id="kpiReach">Loading...</div>
+   <div class="kpi-meta"><span class="trend-up">+45.8%</span><span class="muted" style="font-size: 12px;">impressions</span></div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Revenue Growth')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#14b8a6,#0d9488)"><i data-lucide="indian-rupee" class="icon-sm text-green-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Revenue Growth</h3>
+   <div class="kpi-value" id="kpiRevenue">Loading...</div>
+   <div class="kpi-meta"><span class="trend-up">+18.3%</span><span class="muted" style="font-size: 12px;">MRR</span></div>
+  </div>
+ </div>
+</div>
+
+<!-- Ecosystem Health, Insights, Activity -->
+<div class="grid three" style="margin-bottom: 24px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+ <div class="card interactive-card" onclick="openHealthModal()">
+  <h3>AI Ecosystem Health Score</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Overall system stability and performance</p>
+  <div class="health-score-container" style="height: 220px; margin-top: 16px;">
+    <canvas id="healthScoreChart"></canvas>
+    <div style="position: absolute; text-align: center;">
+      <div style="font-size: 42px; font-weight: 800; color: #10b981; text-shadow: 0 0 20px rgba(16,185,129,0.3);">94</div>
+      <div class="muted" style="font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">Excellent</div>
+    </div>
+  </div>
+ </div>
+ <div class="card">
+  <h3>AI Insights Engine</h3>
+  <p class="muted" style="font-size: 13px; margin-bottom: 16px; margin-top: 4px;">Real-time automated intelligence alerts</p>
+  <ul class="insights-list" id="aiInsightsList">
+   <!-- Populated via JS -->
+  </ul>
+ </div>
+ <div class="card">
+  <h3>Live Activity Feed</h3>
+  <p class="muted" style="font-size: 13px; margin-bottom: 16px; margin-top: 4px;">Real-time platform events</p>
+  <div class="activity-feed" id="liveActivityFeed">
+   <!-- Populated via JS -->
+  </div>
+ </div>
+</div>
+
+<!-- New BI Charts: User Growth & Platform Usage -->
+<div class="grid two" style="margin-bottom: 24px;">
+ <div class="card">
+  <h3>User Growth Trends</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Monthly startups vs active users</p>
+  <div style="position: relative; height: 260px; width: 100%; margin-top: 16px;">
+   <canvas id="userGrowthChart"></canvas>
+  </div>
+ </div>
+ <div class="card">
+  <h3>Platform Usage Analytics</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Feature adoption across the ecosystem</p>
+  <div style="position: relative; height: 260px; width: 100%; margin-top: 16px; display: flex; justify-content: center;">
+   <canvas id="platformUsageChart" style="cursor: pointer;" title="Click axis to navigate to module"></canvas>
+  </div>
+ </div>
+</div>
+
+<!-- EXISTING AI FORECASTING SECTION (Preserved) -->
+<h3 style="margin-bottom: 16px; font-size: 18px; color: #f8fafc; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">Financial Intelligence</h3>
+<div class="kpi-grid" style="margin-bottom: 24px;">
+ <div class="card kpi interactive-card" onclick="openKpiModal('90-Day Forecast')" style="background: rgba(99,102,241,0.05); border-color: rgba(99,102,241,0.2);">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)"><i data-lucide="trending-up" class="icon-sm text-green-500"></i></div>
+  <div>
+   <h3 class="kpi-title">90-Day Forecast</h3>
+   <div class="kpi-value" id="forecastTotal">Loading...</div>
+   <div class="kpi-meta">
+    <span class="trend-up">AI Predicted</span><span class="muted" style="font-size: 12px;">Prophet Model</span>
+   </div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Model R² Score')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#22d3ee,#06b6d4)"><i data-lucide="target" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Model R² Score</h3>
+   <div class="kpi-value">0.978</div>
+   <div class="kpi-meta">
+    <span class="trend-up">+21%</span><span class="muted" style="font-size: 12px;">vs baseline</span>
+   </div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Avg Daily Sales')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#f97316,#ea580c)"><i data-lucide="bar-chart" class="icon-sm text-blue-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Avg Daily Sales</h3>
+   <div class="kpi-value" id="avgDailySales">Loading...</div>
+   <div class="kpi-meta">
+    <span class="muted" style="font-size: 12px;">Predicted average</span>
+   </div>
+  </div>
+ </div>
+ <div class="card kpi interactive-card" onclick="openKpiModal('Confidence')">
+  <div class="kpi-icon" style="background:linear-gradient(135deg,#10b981,#059669)"><i data-lucide="bot" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Confidence</h3>
+   <div class="kpi-value">97.8%</div>
+   <div class="kpi-meta">
+    <span class="muted" style="font-size: 12px;">High accuracy</span>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div>
+   <h3>AI Sales Forecast</h3>
+   <p class="muted" style="font-size: 13px; margin-top: 4px;">Future revenue prediction utilizing localized time-series models</p>
+  </div>
+  <select id="forecastPeriod" title="Forecast period" class="form-input" style="font-size: 13px; padding: 8px 12px; width: auto; background: rgba(0,0,0,0.3);" onchange="updateForecastAnalytics()">
+   <option value="30">30 Days</option>
+   <option value="60">60 Days</option>
+   <option value="90" selected>90 Days</option>
+  </select>
+ </div>
+ <div style="position: relative; height: 320px; width: 100%;">
+  <canvas id="forecastChart"></canvas>
+ </div>
+ <div style="display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(148,163,184,0.2);">
+  <div style="display: flex; align-items: center; gap: 8px;">
+   <div style="width: 12px; height: 12px; background: #6366f1; border-radius: 2px;"></div>
+   <span class="muted" style="font-size: 12px;">Predicted Sales</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px;">
+   <div style="width: 12px; height: 12px; background: rgba(99,102,241,0.2); border: 1px dashed #6366f1; border-radius: 2px;"></div>
+   <span class="muted" style="font-size: 12px;">Confidence Interval</span>
+  </div>
+ </div>
+</div>
+
+<!-- Upgraded Traffic & Pages -->
+<h3 style="margin-bottom: 16px; font-size: 18px; color: #f8fafc; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-top: 32px;">Acquisition & Engagement</h3>
+<div class="grid two" style="margin-bottom: 24px;">
+ <div class="card">
+  <h3>Traffic Sources</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Distribution across inbound channels</p>
+  <div style="position: relative; height: 260px; display: flex; justify-content: center; margin-top: 16px;">
+   <canvas id="sourcesChart" style="cursor: pointer;" title="Click slice to filter top pages"></canvas>
+  </div>
+ </div>
+ <div class="card">
+  <h3>Top Performing Pages</h3>
+  <p class="muted" style="font-size: 13px; margin-top: 4px;">Engagement metrics by pathway</p>
+  <div style="margin-top: 16px; overflow-x: auto;">
+   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+   <div id="tableFilterStatus" class="badge" style="display:none; background: rgba(99,102,241,0.2); color: #818cf8;">Filtered</div>
+   <input type="text" id="topPagesSearch" class="form-input" placeholder="Search pages..." style="width: 200px; padding: 6px 12px; font-size: 13px; background: rgba(0,0,0,0.2);">
+  </div>
+  <table class="table-sortable" style="width: 100%; font-size: 13px; border-collapse: separate; border-spacing: 0;">
+    <thead>
+     <tr>
+      <th onclick="sortTopPages('path')" style="padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; color: #94a3b8;">Page Path ⇕</th>
+      <th onclick="sortTopPages('views')" style="padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; color: #94a3b8;">Views ⇕</th>
+      <th onclick="sortTopPages('bounce')" style="padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; color: #94a3b8;">Bounce ⇕</th>
+      <th onclick="sortTopPages('time')" style="padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; color: #94a3b8;">Avg Time ⇕</th>
+      <th onclick="sortTopPages('conv')" style="padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; color: #94a3b8;">Conv. ⇕</th>
+     </tr>
+    </thead>
+    <tbody id="topPagesTable">
+     <!-- Populated via JS -->
+    </tbody>
+   </table>
+  </div>
+ </div>
+</div>
+
+
+<!-- BI MODALS -->
+<!-- KPI Details Modal -->
+<div class="bi-modal" id="kpiDetailsModal">
+ <div class="bi-modal-content">
+  <button class="bi-modal-close" onclick="closeBiModal('kpiDetailsModal')">&times;</button>
+  <h3 id="kpiModalTitle" style="margin-bottom: 4px; font-size: 20px;">KPI Details</h3>
+  <p id="kpiModalSubtitle" class="muted" style="margin-bottom: 20px; font-size: 13px;">Historical trend and breakdown</p>
+  <div style="display: flex; gap: 24px; margin-bottom: 24px;">
+   <div style="flex: 1;">
+    <div class="muted" style="font-size: 12px; text-transform: uppercase;">Current Value</div>
+    <div id="kpiModalValue" style="font-size: 32px; font-weight: 700; color: #f8fafc; margin-top: 4px;">0</div>
+   </div>
+   <div style="flex: 1;">
+    <div class="muted" style="font-size: 12px; text-transform: uppercase;">Period Growth</div>
+    <div id="kpiModalGrowth" style="font-size: 24px; font-weight: 600; margin-top: 8px;">+0%</div>
+   </div>
+  </div>
+  <div style="position: relative; height: 250px; width: 100%;">
+   <canvas id="kpiDetailChart"></canvas>
+  </div>
+ </div>
+</div>
+
+<!-- Insight Details Modal -->
+<div class="bi-modal" id="insightDetailsModal">
+ <div class="bi-modal-content" style="max-width: 500px;">
+  <button class="bi-modal-close" onclick="closeBiModal('insightDetailsModal')">&times;</button>
+  <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+   <div id="insightModalIcon" style="font-size: 32px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;"><i data-lucide="lightbulb" class="icon-sm text-amber-500"></i></div>
+   <div>
+    <h3 style="margin-bottom: 8px; font-size: 18px;">AI Insight Analysis</h3>
+    <p id="insightModalText" style="color: #e2e8f0; font-size: 15px; line-height: 1.5; margin: 0;"></p>
+   </div>
+  </div>
+  <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+   <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+    <span class="muted" style="font-size: 13px;">AI Confidence Score</span>
+    <span id="insightModalConfidence" style="color: #10b981; font-weight: 600; font-size: 13px;">94%</span>
+   </div>
+   <div style="width: 100%; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden;">
+    <div id="insightModalConfidenceBar" style="height: 100%; width: 94%; background: #10b981;"></div>
+   </div>
+  </div>
+  <div id="insightModalAction" style="margin-top: 16px;">
+   <button class="btn-premium" style="width: 100%;">Take Action</button>
+  </div>
+ </div>
+</div>
+
+<!-- Health Score Modal -->
+<div class="bi-modal" id="healthScoreModal">
+ <div class="bi-modal-content">
+  <button class="bi-modal-close" onclick="closeBiModal('healthScoreModal')">&times;</button>
+  <h3 style="margin-bottom: 4px; font-size: 20px;">Ecosystem Health Breakdown</h3>
+  <p class="muted" style="margin-bottom: 20px; font-size: 13px;">Detailed component analysis of your platform's AI Health Score.</p>
+  
+  <div class="radial-breakdown" id="healthBreakdownGrid">
+   <!-- Populated via JS -->
+  </div>
+ </div>
+</div>

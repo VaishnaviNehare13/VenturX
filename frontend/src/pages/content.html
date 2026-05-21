@@ -1,0 +1,198 @@
+<style>
+ .content-hub-layout { display: grid; grid-template-columns: 320px 1fr 320px; gap: 24px; align-items: start; }
+ 
+ .glass-panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; transition: all 0.3s ease; }
+ .glass-panel:hover { border-color: rgba(99,102,241,0.2); background: rgba(99,102,241,0.02); box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+ 
+ .ai-generate-btn { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; width: 100%; box-shadow: 0 4px 15px rgba(99,102,241,0.4); display: flex; justify-content: center; align-items: center; gap: 8px; }
+ .ai-generate-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,0.6); }
+ 
+ .editor-toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid rgba(255,255,255,0.05); border-bottom: none; }
+ .editor-toolbar button { background: transparent; color: #94a3b8; border: 1px solid transparent; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+ .editor-toolbar button:hover { background: rgba(255,255,255,0.1); color: #f8fafc; border-color: rgba(255,255,255,0.1); }
+ 
+ .rich-editor { min-height: 400px; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 0 0 8px 8px; font-size: 15px; line-height: 1.7; color: #e2e8f0; outline: none; transition: border-color 0.3s; position: relative; }
+ .rich-editor:focus { border-color: #6366f1; background: rgba(99,102,241,0.02); }
+ 
+ .kpi-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; text-align: center; }
+ .kpi-value { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+ 
+ .draft-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; border-radius: 6px; }
+ .draft-item:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
+ 
+ /* AI Loading Overlay */
+ .ai-loader-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.8); backdrop-filter: blur(4px); border-radius: 0 0 8px 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+ .ai-loader-overlay.active { opacity: 1; pointer-events: all; }
+ .ai-spinner { width: 40px; height: 40px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+ 
+ @keyframes spin { 100% { transform: rotate(360deg); } }
+ 
+ .hashtag-pill { display: inline-block; padding: 4px 10px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; border-radius: 20px; font-size: 12px; margin-right: 6px; margin-top: 8px; }
+</style>
+
+<div class="page-header" style="margin-bottom: 24px;">
+ <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+  <div>
+   <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;"> AI Content Intelligence Studio</h2>
+   <p class="lead muted" style="margin-top: 8px;">Generate, optimize, and schedule high-converting startup content.</p>
+  </div>
+  <div style="display: flex; gap: 12px;">
+   <button class="btn-premium" id="btnClearEditor">Clear</button>
+   <button class="btn-premium" id="btnSaveDraft"> Save Draft</button>
+   <button class="btn-premium" id="btnScheduleContent"> Schedule</button>
+  </div>
+ </div>
+</div>
+
+<div class="content-hub-layout">
+ 
+ <!-- LEFT PANEL: AI Generation Settings -->
+ <div class="glass-panel" style="display: flex; flex-direction: column; gap: 16px;">
+  <h3 style="margin-top: 0; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc;"><i data-lucide="bot" class="icon-sm text-purple-500"></i> AI Generation Engine</h3>
+  
+  <div>
+   <label class="muted" style="font-size: 12px; display: block; margin-bottom: 6px;">Content Type</label>
+   <select id="aiType" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc;">
+    <option value="LinkedIn Post">LinkedIn Post</option>
+    <option value="Twitter Thread">Twitter/X Thread</option>
+    <option value="Startup Pitch">Startup Pitch</option>
+    <option value="Marketing Email">Marketing Email</option>
+    <option value="Blog Post">SEO Blog Post</option>
+    <option value="Ad Copy">Ad Copy</option>
+   </select>
+  </div>
+  
+  <div>
+   <label class="muted" style="font-size: 12px; display: block; margin-bottom: 6px;">Tone of Voice</label>
+   <select id="aiTone" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc;">
+    <option value="Professional">Professional & Corporate</option>
+    <option value="Persuasive">Persuasive & Salesy</option>
+    <option value="Energetic">Energetic & Startup</option>
+    <option value="Casual">Casual & Relatable</option>
+    <option value="Investor-focused">Investor-focused</option>
+   </select>
+  </div>
+  
+  <div>
+   <label class="muted" style="font-size: 12px; display: block; margin-bottom: 6px;">Target Audience</label>
+   <select id="aiAudience" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc;">
+    <option value="Founders">Startup Founders</option>
+    <option value="Investors">Investors & VCs</option>
+    <option value="SaaS Users">SaaS Users</option>
+    <option value="Gen Z">Gen Z Consumers</option>
+    <option value="Enterprise">Enterprise Executives</option>
+   </select>
+  </div>
+  
+  <div>
+   <label class="muted" style="font-size: 12px; display: block; margin-bottom: 6px;">Prompt / Topic</label>
+   <textarea id="aiPrompt" rows="4" placeholder="e.g. Announcing our new AI analytics feature that saves 10 hours a week..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc; resize: none; font-family: inherit;"></textarea>
+  </div>
+  
+  <div>
+   <label class="muted" style="font-size: 12px; display: block; margin-bottom: 6px;">Keywords (Comma separated)</label>
+   <input type="text" id="aiKeywords" placeholder="AI, Startup, Growth" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc;" />
+  </div>
+  
+  <button class="btn-premium" style="width: 100%; margin-top: 8px;" id="btnGenerateContent">
+   <i data-lucide="sparkles" class="icon-sm text-amber-500"></i> Generate AI Content
+  </button>
+ </div>
+
+ <!-- CENTER PANEL: Editor & Analytics -->
+ <div style="display: flex; flex-direction: column; gap: 24px;">
+  
+  <!-- Analytics Ribbon -->
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+   <div class="kpi-card">
+    <div class="muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Engagement Prob.</div>
+    <div class="kpi-value" id="scoreEngagement">--%</div>
+   </div>
+   <div class="kpi-card">
+    <div class="muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Readability</div>
+    <div class="kpi-value" id="scoreReadability">--/100</div>
+   </div>
+   <div class="kpi-card">
+    <div class="muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">SEO Score</div>
+    <div class="kpi-value" id="scoreSEO">--/100</div>
+   </div>
+  </div>
+  
+  <!-- Editor Card -->
+  <div style="box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 8px;">
+   <div class="editor-toolbar">
+    <button data-cmd="bold" title="Bold"><b>B</b></button>
+    <button data-cmd="italic" title="Italic"><i>I</i></button>
+    <button data-cmd="underline" title="Underline"><u>U</u></button>
+    <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+    <button data-cmd="formatBlock" data-arg="h2">H2</button>
+    <button data-cmd="formatBlock" data-arg="h3">H3</button>
+    <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+    <button data-cmd="insertUnorderedList">• List</button>
+    <button data-cmd="insertOrderedList">1. List</button>
+    <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+    <button data-cmd="media"> Media</button>
+    <input type="file" id="mediaUpload" accept="image/*,video/*" style="display: none;" />
+   </div>
+   
+   <div style="position: relative;">
+    <div id="editor" class="rich-editor" contenteditable="true" placeholder="Start typing or use AI to generate content..."></div>
+    
+    <div id="aiLoader" class="ai-loader-overlay">
+     <div class="ai-spinner"></div>
+     <div style="color: #818cf8; font-weight: 500; font-size: 15px;"><i data-lucide="brain" class="icon-sm text-purple-500"></i> Synthesizing Intelligence...</div>
+     <div class="muted" style="font-size: 12px; margin-top: 8px;" id="aiLoaderText">Analyzing audience algorithms...</div>
+    </div>
+   </div>
+  </div>
+  
+  <!-- AI Strategic Insights Block -->
+  <div class="glass-panel" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
+   <h4 style="margin-top: 0; color: #34d399; display: flex; align-items: center; gap: 8px; font-size: 14px;"><i data-lucide="lightbulb" class="icon-sm text-amber-500"></i> Content Insights</h4>
+   <p id="contentInsightsText" style="margin: 0; font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+    Content length is optimal. Awaiting generation to provide deeper AI suggestions.
+   </p>
+  </div>
+  
+ </div>
+
+ <!-- RIGHT PANEL: Drafts, Scheduling & Collab -->
+ <div style="display: flex; flex-direction: column; gap: 24px;">
+  
+  <div class="glass-panel">
+   <h3 style="margin-top: 0; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
+     Recent Drafts
+    <span style="font-size: 11px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px;" id="draftCount">0</span>
+   </h3>
+   <div id="draftList" style="max-height: 250px; overflow-y: auto; margin-top: 12px;">
+    <p class="muted" style="font-size: 13px;">No drafts saved yet.</p>
+   </div>
+  </div>
+  
+  <div class="glass-panel">
+   <h3 style="margin-top: 0; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc;"> Scheduler</h3>
+   <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+    <input type="datetime-local" id="scheduleDate" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc;" />
+    <select id="schedulePlatform" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f8fafc;">
+     <option>LinkedIn</option>
+     <option>Twitter/X</option>
+     <option>Email List</option>
+     <option>Blog CMS</option>
+    </select>
+    <div id="upcomingSchedules" style="margin-top: 8px; font-size: 12px;"></div>
+   </div>
+  </div>
+  
+  <div class="glass-panel">
+   <h3 style="margin-top: 0; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; color: #f8fafc;"><i data-lucide="message-square" class="icon-sm text-blue-500"></i> Team Comments</h3>
+   <div id="commentsList" style="max-height: 200px; overflow-y: auto; margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+    <p class="muted" style="font-size: 13px;">No comments.</p>
+   </div>
+   <div style="display: flex; gap: 8px; margin-top: 16px;">
+    <input type="text" id="commentInput" placeholder="Add a note..." style="flex: 1; padding: 8px 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f8fafc; font-size: 13px;" />
+    <button class="btn-premium" style="padding: 8px 12px;" id="btnAddComment">Send</button>
+   </div>
+  </div>
+  
+ </div>
+</div>

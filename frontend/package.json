@@ -1,0 +1,26 @@
+{
+  "name": "startup-management-dashboard",
+  "version": "2.0.0",
+  "description": "Startup/SME Management Dashboard with AI-powered Analytics",
+  "main": "../backend/server.js",
+  "scripts": {
+    "start": "node ../backend/server.js",
+    "dev": "nodemon ../backend/server.js",
+    "ml-service": "cd ../backend && python models_api.py",
+    "start:all": "concurrently \"npm run ml-service\" \"npm start\"",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.15.0",
+    "cors": "^2.8.6",
+    "express": "^4.22.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

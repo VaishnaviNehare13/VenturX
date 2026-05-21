@@ -1,0 +1,108 @@
+<div class="page-header">
+ <h2>Help Center</h2>
+ <p class="lead muted">Find answers quickly or contact support.</p>
+</div>
+<div class="grid two">
+ <div>
+  <div class="card">
+   <h3>Help Center</h3>
+   <div class="search" role="search" style="margin-top:8px;">
+    <span>Search</span>
+    <input type="search" id="faqSearch" placeholder="Search FAQs..." />
+   </div>
+  </div>
+ <div class="card" style="margin-top:16px;">
+   <h3>FAQ</h3>
+   <div id="faq"></div>
+  </div>
+ </div>
+ <form class="card" onsubmit="event.preventDefault()">
+  <h3>Contact Us</h3>
+  <label>Name <input required type="text" /></label>
+  <label>Email <input required type="email" /></label>
+  <label>Message <textarea required rows="5" style="width:100%"></textarea></label>
+  <button class="btn-premium" type="submit">Send</button>
+ </form>
+</div>
+
+<div id="chatWidget" class="card" style="position: fixed; right:16px; bottom:16px; width: 280px;">
+ <div style="display:flex; justify-content:space-between; align-items:center;">
+  <strong>Help Chat</strong>
+  <button class="btn-premium" id="toggleChat">–</button>
+ </div>
+ <div id="chatBody" style="margin-top:8px; max-height:220px; overflow:auto;">
+  <div class="muted">How can we help you today?</div>
+ </div>
+ <div style="display:flex;gap:8px;margin-top:8px;">
+  <input type="text" id="chatInput" placeholder="Type a message" style="flex:1;background:transparent;border:1px solid rgba(148,163,184,0.2);border-radius:8px;padding:6px;color:#e5e7eb" />
+  <button class="btn-premium" id="chatSend">Send</button>
+ </div>
+</div>
+
+<script>
+ (function initSupport(){
+  const faqs = [
+   { q:'What is VenturX?', a:'A unified dashboard for analytics, marketing automation, CRM, financials, content, and more.' },
+   { q:'How do I get started?', a:'Click Launch App on the home page or go to Dashboard to explore modules.' },
+   { q:'Is there a free plan?', a:'This demo is free. For production pricing, contact us via the Help Center.' },
+   { q:'How can I reset my password?', a:'Go to Settings → Security and follow the password reset flow.' },
+   { q:'How do I invite my team?', a:'Open Settings → Team and send invitations via email.' },
+   { q:'How to create a marketing campaign?', a:'Go to Marketing → New Campaign, select an audience, craft content, and launch.' },
+   { q:'Where can I find my invoices and billing?', a:'Open Financials to view invoices, transaction history, and download statements.' },
+   { q:'Do you have integrations?', a:'Yes. Common integrations include email providers and CRM imports; see Settings → Integrations.' },
+   { q:'How do I switch themes (dark/light)?', a:'Use the Toggle Theme button in the top bar to cycle through themes.' },
+   { q:'Is my data secure?', a:'We follow best practices for encryption in transit and at rest in production deployments.' },
+   { q:'Which browsers are supported?', a:'Latest versions of Chrome, Edge, Firefox, and Safari are supported.' },
+   { q:'How do I contact support?', a:'Use the Help Center contact form below or the chat widget on any page.' },
+   { q:'Can I export my data?', a:'Yes, exports are available per module where applicable (e.g., Analytics, CRM, Financials).'},
+   { q:'How does the chatbot work?', a:'It can answer quick questions and route you to relevant pages. For complex issues, use the contact form.' },
+   { q:'What are your support hours?', a:'We target 24/7 coverage via chat; form submissions are handled next business day.' }
+  ];
+  const faq = document.getElementById('faq');
+  const search = document.getElementById('faqSearch');
+  function render(q=''){
+   faq.innerHTML = faqs
+    .filter(f => (f.q + ' ' + f.a).toLowerCase().includes(q.toLowerCase()))
+    .map((f,i)=> `<div class='card' style='margin:8px 0;'>
+     <div style='display:flex;justify-content:space-between;align-items:center;'>
+      <strong>${f.q}</strong>
+      <button class='btn-premium' data-idx='${i}'>Show</button>
+     </div>
+     <div class='muted' data-detail='${i}' style='display:none;margin-top:6px;'>${f.a}</div>
+    </div>`).join('');
+  }
+  render();
+  faq.addEventListener('click', (e)=>{
+   const t = e.target; if (t && t.matches('button[data-idx]')){
+    const idx = t.getAttribute('data-idx');
+    const d = document.querySelector(`[data-detail='${idx}']`);
+    if (d) {
+     const open = d.style.display === 'none';
+     d.style.display = open ? 'block' : 'none';
+     t.textContent = open ? 'Hide' : 'Show';
+    }
+   }
+  });
+  search.addEventListener('input', (e)=> render(e.target.value));
+
+  // Hide this page-specific chat if global chatbot is present
+  const pageChat = document.getElementById('chatWidget');
+  if (document.getElementById('chatbot') && pageChat) {
+   pageChat.parentNode && pageChat.parentNode.removeChild(pageChat);
+  } else {
+   const chatBody = document.getElementById('chatBody');
+   const chatInput = document.getElementById('chatInput');
+   document.getElementById('chatSend').addEventListener('click', ()=>{
+    const msg = chatInput.value.trim(); if (!msg) return;
+    chatBody.insertAdjacentHTML('beforeend', `<div>${msg}</div>`);
+    chatInput.value = '';
+   });
+   document.getElementById('toggleChat').addEventListener('click', ()=>{
+    const body = document.getElementById('chatBody');
+    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+   });
+  }
+ })();
+</script>
+
+

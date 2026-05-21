@@ -1,0 +1,243 @@
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+ <div>
+  <h2>AI Sales Forecasting</h2>
+  <p class="lead muted">Predict future revenue using Prophet time-series modeling</p>
+ </div>
+ <div style="display: flex; gap: 12px; align-items: center;">
+  <button class="btn-premium" id="analyzeStartupBtn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; font-weight: 600; padding: 8px 16px; box-shadow: 0 4px 12px rgba(99,102,241,0.3); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+   <span style="margin-right: 6px;"><i data-lucide="sparkles" class="icon-sm text-amber-500"></i></span> Analyze Startup Idea
+  </button>
+  <button class="btn-premium" id="exportCsvBtn">Export CSV</button>
+  <button class="btn-premium" id="exportPdfBtn">Export PDF</button>
+ </div>
+</div>
+
+<!-- Forecasting KPIs -->
+<div class="kpi-grid mb-4" style="margin-bottom: 24px;">
+ <div class="card kpi interactive-card">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #10b981, #059669);"><i data-lucide="indian-rupee" class="icon-sm text-green-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Predicted Revenue</h3>
+   <div class="kpi-value" id="fcstTotalRevenue"><div class="skeleton skeleton-text" style="width: 100px; height: 32px;"></div></div>
+   <div class="kpi-meta"><span class="muted" id="fcstPeriodLabel">Next 90 Days</span></div>
+  </div>
+ </div>
+ 
+ <div class="card kpi interactive-card">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);"><i data-lucide="trending-up" class="icon-sm text-green-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Growth Rate</h3>
+   <div class="kpi-value" id="fcstGrowthRate"><div class="skeleton skeleton-text" style="width: 80px; height: 32px;"></div></div>
+   <div class="kpi-meta"><span class="muted">Expected trend</span></div>
+  </div>
+ </div>
+
+ <div class="card kpi interactive-card">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);"><i data-lucide="target" class="icon-sm text-purple-500"></i></div>
+  <div>
+   <h3 class="kpi-title">Confidence Level</h3>
+   <div class="kpi-value" id="fcstConfidence"><div class="skeleton skeleton-text" style="width: 80px; height: 32px;"></div></div>
+   <div class="kpi-meta"><span class="muted">Model accuracy</span></div>
+  </div>
+ </div>
+
+ <div class="card kpi interactive-card">
+  <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+  <div>
+   <h3 class="kpi-title">Forecast Period</h3>
+   <div class="kpi-value">
+    <select id="forecastPeriodSelect" style="background: transparent; border: none; color: inherit; font-size: inherit; font-weight: inherit; outline: none; cursor: pointer;">
+     <option value="30" style="color: initial;">30 Days</option>
+     <option value="60" style="color: initial;">60 Days</option>
+     <option value="90" selected style="color: initial;">90 Days</option>
+    </select>
+   </div>
+   <div class="kpi-meta"><span class="muted">Change horizon</span></div>
+  </div>
+ </div>
+</div>
+
+<!-- Main Chart Section -->
+<div class="card mb-4" style="margin-bottom: 24px;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div>
+   <h3>Revenue Projection</h3>
+   <p class="muted" style="font-size: 13px;">Historical sales combined with AI predictions</p>
+  </div>
+ </div>
+ 
+ <div style="position: relative; height: 400px; width: 100%;" id="forecastChartContainer">
+  <div class="skeleton skeleton-chart" style="height: 400px; width: 100%;"></div>
+  <canvas id="forecastChart" style="display: none;"></canvas>
+ </div>
+ 
+ <div style="display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(148,163,184,0.2);" id="forecastLegend" style="display: none;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+   <div style="width: 12px; height: 12px; background: #94a3b8; border-radius: 2px;"></div>
+   <span class="muted" style="font-size: 12px;">Historical</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px;">
+   <div style="width: 12px; height: 12px; background: #6366f1; border-radius: 2px;"></div>
+   <span class="muted" style="font-size: 12px;">Predicted</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px;">
+   <div style="width: 12px; height: 12px; background: rgba(99,102,241,0.15); border: 1px dashed #6366f1; border-radius: 2px;"></div>
+   <span class="muted" style="font-size: 12px;">Confidence Bounds</span>
+  </div>
+ </div>
+</div>
+
+<!-- AI Insights Section -->
+<div class="grid two">
+ <div class="card">
+  <h3>Trend Analysis</h3>
+  <p class="muted" style="font-size: 13px; margin-bottom: 16px;">Key observations from the Prophet model</p>
+  <div id="aiTrendAnalysis">
+   <div class="skeleton" style="height: 64px; margin-bottom: 12px;"></div>
+   <div class="skeleton" style="height: 64px; margin-bottom: 12px;"></div>
+   <div class="skeleton" style="height: 64px;"></div>
+  </div>
+ </div>
+ 
+ <div class="card interactive-card hover-glow">
+  <h3>Business Recommendations</h3>
+  <p class="muted" style="font-size: 13px; margin-bottom: 16px;">Strategic actions based on the forecast</p>
+  <div id="aiRecommendations">
+   <div class="skeleton" style="height: 64px; margin-bottom: 12px;"></div>
+   <div class="skeleton" style="height: 64px; margin-bottom: 12px;"></div>
+   <div class="skeleton" style="height: 64px;"></div>
+  </div>
+ </div>
+</div>
+
+<!-- Business Summary and SWOT Analysis -->
+<div class="grid two" style="margin-top: 24px;" id="startupAnalysisResults">
+ <div class="card report-card interactive-card hover-glow">
+  <h3>AI Business Summary</h3>
+  <div id="businessSummary">
+   <div class="skeleton" style="height: 100px;"></div>
+  </div>
+ </div>
+ 
+ <div class="card report-card interactive-card hover-glow">
+  <h3>SWOT Analysis</h3>
+  <div id="swotAnalysis">
+   <div class="skeleton" style="height: 100px;"></div>
+  </div>
+ </div>
+</div>
+
+<style>
+ .hover-glow { transition: box-shadow 0.3s ease, transform 0.3s ease; }
+ .hover-glow:hover { box-shadow: 0 0 20px rgba(99,102,241,0.2); transform: translateY(-2px); }
+ .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+ @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<!-- Full-screen Loading Overlay -->
+<div id="startupLoadingOverlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;">
+ <div style="width: 64px; height: 64px; border: 4px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+ <h3 style="margin-top: 24px; color: white; font-weight: 600; font-size: 20px;">Analyzing Startup Idea...</h3>
+ <p style="color: #94a3b8; margin-top: 8px;">Generating predictive models and insights</p>
+ <style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #startupLoadingOverlay.visible { opacity: 1; pointer-events: all; }
+ </style>
+</div>
+
+<!-- Startup Input Modal -->
+<div id="startupModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9999; display: none; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.2s ease; backdrop-filter: blur(4px);">
+ <div class="card" style="width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; transform: translateY(20px); transition: transform 0.3s ease;" id="startupModalCard">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+   <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;"><span style="color: #6366f1;"><i data-lucide="sparkles" class="icon-sm text-amber-500"></i></span> Startup Intelligence Engine</h3>
+   <button class="icon-btn" id="closeStartupModal" style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--color-muted);">✕</button>
+  </div>
+  
+  <form id="startupForm">
+   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Startup Name</label>
+     <input type="text" id="suName" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);" placeholder="e.g. NextGen AI">
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Business Domain</label>
+     <select id="suDomain" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);">
+      <option value="SaaS">SaaS / Software</option>
+      <option value="E-commerce">E-commerce</option>
+      <option value="Fintech">Fintech</option>
+      <option value="Healthtech">Healthtech</option>
+      <option value="Edtech">Edtech</option>
+      <option value="Other">Other</option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Target Audience</label>
+     <input type="text" id="suAudience" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);" placeholder="e.g. Small businesses">
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Initial Investment ($)</label>
+     <input type="number" id="suInvestment" required min="0" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);" placeholder="50000">
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Monthly Budget ($)</label>
+     <input type="number" id="suBudget" required min="0" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);" placeholder="5000">
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Pricing Model</label>
+     <select id="suPricing" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);">
+      <option value="Subscription">Subscription (Recurring)</option>
+      <option value="One-Time">One-Time Purchase</option>
+      <option value="Freemium">Freemium</option>
+      <option value="Usage-Based">Usage-Based</option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Expected Customers (1st Yr)</label>
+     <input type="number" id="suCustomers" required min="1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);" placeholder="1000">
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Marketing Spend (Monthly $)</label>
+     <input type="number" id="suMarketing" required min="0" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);" placeholder="2000">
+    </div>
+    <div class="form-group">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Competitor Level</label>
+     <select id="suCompetitors" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);">
+      <option value="Low">Low (Niche market)</option>
+      <option value="Medium" selected>Medium (Standard)</option>
+      <option value="High">High (Saturated)</option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label for="marketRegion" style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Market Region</label>
+     <select id="marketRegion" name="marketRegion" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);">
+       <option value="Local">Local</option>
+       <option value="India" selected>India</option>
+       <option value="Mumbai">Mumbai</option>
+       <option value="Bangalore">Bangalore</option>
+       <option value="Pune">Pune</option>
+       <option value="Hyderabad">Hyderabad</option>
+       <option value="Delhi NCR">Delhi NCR</option>
+       <option value="Chennai">Chennai</option>
+       <option value="Kolkata">Kolkata</option>
+       <option value="Ahmedabad">Ahmedabad</option>
+       <option value="Tier 2 Cities">Tier 2 Cities</option>
+       <option value="Asia">Asia</option>
+       <option value="Global">Global</option>
+     </select>
+    </div>
+    <div class="form-group" style="grid-column: 1 / -1;">
+     <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--color-muted);">Business Description</label>
+     <textarea id="suDescription" rows="3" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.1); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text); resize: vertical;" placeholder="Briefly describe what your startup does..."></textarea>
+    </div>
+   </div>
+   <div style="margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px;">
+    <button type="button" class="btn-premium" id="cancelStartupBtn">Cancel</button>
+    <button type="submit" class="btn-premium" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; font-weight: 600; padding: 10px 24px; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">Run AI Analysis</button>
+   </div>
+  </form>
+ </div>
+</div>
+<style>
+ #startupModal.open { opacity: 1; pointer-events: all; }
+ #startupModal.open #startupModalCard { transform: translateY(0); }
+</style>

@@ -1,0 +1,82 @@
+<div class="page-header" style="text-align: center;">
+ <h2>Welcome Back</h2>
+ <p class="lead muted">Sign in to continue to your dashboard</p>
+</div>
+
+<div style="display: flex; justify-content: center; align-items: flex-start; min-height: 60vh; padding: 20px 0;">
+ <form class="card" id="loginForm" onsubmit="event.preventDefault()" style="width: 100%; max-width: 420px; padding: 32px;">
+  <div style="text-align: center; margin-bottom: 24px;">
+   <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1, #8b5cf6, #c084fc); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: white; font-size: 28px; font-weight: 700; box-shadow: 0 8px 24px rgba(139,92,246,0.3); text-shadow: 0 0 10px rgba(255,255,255,0.5);">V</div>
+   <h3 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">VenturX</h3>
+   <p class="muted" style="margin: 8px 0 0; font-size: 14px;">Unified AI Operating System for Startups</p>
+  </div>
+  
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+   <div>
+    <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Email Address</label>
+    <input type="email" id="loginEmail" required placeholder="you@example.com" style="width: 100%;" />
+   </div>
+   
+   <div>
+    <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Password</label>
+    <input type="password" id="loginPassword" required placeholder="••••••••" style="width: 100%;" />
+   </div>
+   
+   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div>
+     <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Country</label>
+     <select id="loginCountry" style="width: 100%;" title="Select your country">
+      <option value="">Select Country</option>
+      <option value="IN" selected>India</option>
+      <option value="US">United States</option>
+      <option value="UK">United Kingdom</option>
+      <option value="CA">Canada</option>
+      <option value="AU">Australia</option>
+      <option value="DE">Germany</option>
+      <option value="FR">France</option>
+      <option value="JP">Japan</option>
+      <option value="SG">Singapore</option>
+      <option value="AE">UAE</option>
+     </select>
+    </div>
+    <div>
+     <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500;">Company Name</label>
+     <input type="text" id="loginCompany" placeholder="Your company" style="width: 100%;" />
+    </div>
+   </div>
+  </div>
+  
+  <div style="margin-top: 24px;">
+   <button class="btn-premium" type="submit" style="width: 100%; justify-content: center; padding: 12px;">Sign In</button>
+  </div>
+  
+  <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border);">
+   <p class="muted" style="margin: 0; font-size: 14px;">Don't have an account? <a href="#/signup" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">Create Account</a></p>
+  </div>
+ </form>
+</div>
+
+<script>
+ (function(){
+  document.getElementById('loginForm')?.addEventListener('submit', (e)=>{
+   e.preventDefault();
+   const email = document.getElementById('loginEmail')?.value || 'user@example.com';
+   const name = email.split('@')[0];
+   const initials = name.substring(0, 2).toUpperCase();
+   const country = document.getElementById('loginCountry')?.value || 'IN';
+   const company = document.getElementById('loginCompany')?.value || '';
+   
+   // Use Auth system
+   if (typeof Auth !== 'undefined') {
+    Auth.login({ email, name, initials, country, company });
+    location.hash = '#/dashboard';
+   } else {
+    // Fallback
+    localStorage.setItem('user', JSON.stringify({ email, name, initials, country, company }));
+    location.hash = '#/dashboard';
+   }
+  });
+ })();
+</script>
+
+

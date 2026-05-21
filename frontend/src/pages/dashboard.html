@@ -1,0 +1,270 @@
+<style>
+/* ---------------------------------------------------
+   ULTRA-STABLE STATIC DASHBOARD
+--------------------------------------------------- */
+
+.dash-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 32px;
+}
+
+.dash-card {
+    background: var(--color-surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);
+}
+.dash-header h1 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+    color: var(--color-text);
+}
+.dash-header p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.dash-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+.dash-kpi {
+    padding: 20px;
+}
+.dash-kpi-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.dash-kpi-title {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dash-kpi-trend {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+.dash-kpi-trend.up { background: rgba(16,185,129,0.1); color: #10b981; }
+.dash-kpi-trend.down { background: rgba(239,68,68,0.1); color: #ef4444; }
+.dash-kpi-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.dash-2col {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+.dash-3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+}
+.dash-panel-title {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dash-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.dash-list-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.02);
+}
+
+.dash-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.dash-table th {
+    text-align: left;
+    padding: 8px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.dash-table td {
+    padding: 12px 8px;
+    font-size: 14px;
+    color: var(--color-text);
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+
+.chart-placeholder {
+    height: 250px;
+    width: 100%;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+    .dash-2col, .dash-3col { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="dash-container">
+    
+    <!-- HEADER -->
+    <div class="dash-card dash-header">
+        <div>
+            <h1>Welcome back, Vaishnavi</h1>
+            <p>VenturX AI systems are operating normally.</p>
+        </div>
+        <div>
+            <span style="color:#10b981; background:rgba(16,185,129,0.1); padding:4px 12px; border-radius:12px; font-size:12px;">System Online</span>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="dash-kpi-grid">
+        <div class="dash-card dash-kpi">
+            <div class="dash-kpi-top">
+                <span class="dash-kpi-title"><i data-lucide="indian-rupee" style="width:16px;"></i> Revenue</span>
+                <span class="dash-kpi-trend up">+12%</span>
+            </div>
+            <div class="dash-kpi-value">₹12,45,600</div>
+        </div>
+        <div class="dash-card dash-kpi">
+            <div class="dash-kpi-top">
+                <span class="dash-kpi-title"><i data-lucide="users" style="width:16px;"></i> Active Clients</span>
+                <span class="dash-kpi-trend up">+4%</span>
+            </div>
+            <div class="dash-kpi-value">124</div>
+        </div>
+        <div class="dash-card dash-kpi">
+            <div class="dash-kpi-top">
+                <span class="dash-kpi-title"><i data-lucide="brain" style="width:16px;"></i> AI Accuracy</span>
+                <span class="dash-kpi-trend up">+2%</span>
+            </div>
+            <div class="dash-kpi-value">94%</div>
+        </div>
+        <div class="dash-card dash-kpi">
+            <div class="dash-kpi-top">
+                <span class="dash-kpi-title"><i data-lucide="trending-up" style="width:16px;"></i> Growth</span>
+                <span class="dash-kpi-trend down">-1%</span>
+            </div>
+            <div class="dash-kpi-value">18%</div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS & INSIGHTS -->
+    <div class="dash-2col">
+        <div class="dash-card">
+            <h3 class="dash-panel-title"><i data-lucide="activity" style="width:18px;"></i> Revenue vs Expenses</h3>
+            <!-- CHART REPLACED WITH PLACEHOLDER TO PREVENT CRASHES -->
+            <div class="chart-placeholder">
+                <i data-lucide="bar-chart-2" style="margin-right: 8px;"></i> Revenue Analytics (Charts Disabled for Stability)
+            </div>
+        </div>
+        <div class="dash-card">
+            <h3 class="dash-panel-title"><i data-lucide="sparkles" style="width:18px; color:#a855f7;"></i> AI Insights</h3>
+            <div class="dash-list">
+                <div class="dash-list-item">
+                    <div style="color:#3b82f6;"><i data-lucide="trending-up" style="width:20px;"></i></div>
+                    <div>
+                        <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:600;">Trajectory Optimal</h4>
+                        <p style="margin:0; font-size:13px; color:var(--color-text-secondary);">MRR indicates strong momentum.</p>
+                    </div>
+                </div>
+                <div class="dash-list-item">
+                    <div style="color:#f59e0b;"><i data-lucide="alert-circle" style="width:20px;"></i></div>
+                    <div>
+                        <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:600;">Retention Alert</h4>
+                        <p style="margin:0; font-size:13px; color:var(--color-text-secondary);">Minor variance detected in Pro tier.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="dash-3col">
+        <div class="dash-card">
+            <h3 class="dash-panel-title"><i data-lucide="radio" style="width:18px; color:#10b981;"></i> Activity Feed</h3>
+            <div class="dash-list">
+                <div class="dash-list-item">
+                    <span style="font-size:11px; color:#64748b; font-family:monospace; margin-top:2px;">10:42 AM</span>
+                    <span style="font-size:13px;">Platform data ecosystem synchronized.</span>
+                </div>
+                <div class="dash-list-item">
+                    <span style="font-size:11px; color:#64748b; font-family:monospace; margin-top:2px;">09:15 AM</span>
+                    <span style="font-size:13px;">Invoice #INV-245 paid by <strong>PuneTech Labs</strong></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dash-card">
+            <h3 class="dash-panel-title"><i data-lucide="building-2" style="width:18px;"></i> Top Clients</h3>
+            <table class="dash-table">
+                <thead>
+                    <tr><th>Entity</th><th>State</th><th style="text-align:right;">ARR</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Sharma Enterprises</td><td style="color:#10b981;">Active</td><td style="text-align:right;">₹12.5L</td></tr>
+                    <tr><td>Mehta Technologies</td><td style="color:#10b981;">Active</td><td style="text-align:right;">₹9.8L</td></tr>
+                    <tr><td>Verma Digital</td><td style="color:#3b82f6;">Scaling</td><td style="text-align:right;">₹8.5L</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dash-card">
+            <h3 class="dash-panel-title"><i data-lucide="grid" style="width:18px;"></i> Modules</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <a href="#/crm" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
+                    <i data-lucide="users" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
+                    <span style="font-size:14px; font-weight:600;">CRM</span>
+                </a>
+                <a href="#/financials" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
+                    <i data-lucide="wallet" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
+                    <span style="font-size:14px; font-weight:600;">Financials</span>
+                </a>
+                <a href="#/marketing" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
+                    <i data-lucide="megaphone" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
+                    <span style="font-size:14px; font-weight:600;">Marketing</span>
+                </a>
+                <a href="#/forecasting" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
+                    <i data-lucide="brain" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
+                    <span style="font-size:14px; font-weight:600;">Forecasting</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>

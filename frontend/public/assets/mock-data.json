@@ -1,0 +1,61 @@
+{
+  "currency": "₹",
+  "kpis": {
+    "revenue": 10661400,
+    "revenue_growth": 8.2,
+    "campaigns": 14,
+    "active_campaigns": 8,
+    "leads": 326,
+    "leads_growth": 12,
+    "csat": 4.6,
+    "total_customers": 2240,
+    "avg_revenue_per_customer": 502150,
+    "pending_tasks": 150,
+    "conversion_rate": 3.2,
+    "marketing_roi": 320
+  },
+  "campaigns": [
+    { "id": 1, "name": "Spring Promo", "channel": "Email", "active": true, "budget": 415000, "spent": 265600, "leads": 145, "roi": 290 },
+    { "id": 2, "name": "Retargeting Q4", "channel": "Paid", "active": true, "budget": 664000, "spent": 514600, "leads": 89, "roi": 180 },
+    { "id": 3, "name": "Social Boost", "channel": "Social", "active": true, "budget": 249000, "spent": 174300, "leads": 67, "roi": 245 },
+    { "id": 4, "name": "Product Launch", "channel": "Multi", "active": false, "budget": 1245000, "spent": 1245000, "leads": 420, "roi": 580 }
+  ],
+  "segments": [
+    { "id": 0, "name": "Budget Buyers", "size": 650, "percentage": 29, "color": "#6366f1", "avg_order": 2905, "lifetime_value": 103750 },
+    { "id": 1, "name": "Regular Customers", "size": 1053, "percentage": 47, "color": "#22d3ee", "avg_order": 7055, "lifetime_value": 282200 },
+    { "id": 2, "name": "High-Value Champions", "size": 537, "percentage": 24, "color": "#10b981", "avg_order": 17430, "lifetime_value": 1037500 },
+    { "id": 3, "name": "VIP Spenders", "size": 0, "percentage": 0, "color": "#f59e0b", "avg_order": 37350, "lifetime_value": 2324000 }
+  ],
+  "financials": {
+    "monthly_revenue": [7885000, 8466000, 8964000, 9545000, 9877000, 10661400],
+    "monthly_expenses": [3154000, 3320000, 3278500, 3403000, 3552400, 3494300],
+    "revenue_by_category": {
+      "Services": 35,
+      "Licensing": 20,
+      "Consulting": 25,
+      "Subscription": 12,
+      "Training": 8
+    }
+  },
+  "leads": [
+    { "id": 1, "name": "Sarah Connor", "company": "Cyberdyne Systems", "email": "sarah@skynet.com", "stage": "negotiation", "value": 996000 },
+    { "id": 2, "name": "James Bond", "company": "MI6", "email": "007@mi6.gov.uk", "stage": "new", "value": 4150000 },
+    { "id": 3, "name": "Tony Stark", "company": "Stark Industries", "email": "tony@stark.com", "stage": "won", "value": 83000000 },
+    { "id": 4, "name": "Bruce Wayne", "company": "Wayne Enterprises", "email": "bruce@wayne.com", "stage": "proposal", "value": 6225000 }
+  ],
+  "workflow_tasks": [
+    { "id": 1, "department": "Tech", "type": "Development", "priority": 5, "deadline_days": 3, "estimated_hours": 16, "resource_available": 1 },
+    { "id": 2, "department": "Marketing", "type": "Campaign", "priority": 4, "deadline_days": 5, "estimated_hours": 8, "resource_available": 1 },
+    { "id": 3, "department": "HR", "type": "Hiring", "priority": 3, "deadline_days": 14, "estimated_hours": 20, "resource_available": 0 }
+  ],
+  "model_performance": {
+    "segmentation": { "score": 0.39, "metric": "Silhouette Score", "improvement": "+77%" },
+    "sales_forecast": { "score": 0.978, "metric": "R² Score", "improvement": "+21%" },
+    "campaign_pred": { "score": 0.833, "metric": "Accuracy", "improvement": "+16%" },
+    "profit_pred": { "score": 0.978, "metric": "R² Score", "improvement": "+10%" },
+    "recommendations": { "score": 0.81, "metric": "Precision@3", "improvement": "+47%" },
+    "workflow_opt": { "score": 26.72, "metric": "Avg Score", "improvement": "+123%" }
+  }
+}
+
+
