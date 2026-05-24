@@ -1,268 +1,458 @@
 <style>
 /* ---------------------------------------------------
-   ULTRA-STABLE STATIC DASHBOARD
+   PREMIUM ENTERPRISE AI SAAS DASHBOARD (VenturX)
 --------------------------------------------------- */
+:root {
+    --card-bg: rgba(20, 24, 36, 0.6);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-border-hover: rgba(99, 102, 241, 0.4);
+    --primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #c084fc);
+    --success-bg: rgba(16, 185, 129, 0.1);
+    --success-text: #10b981;
+}
 
 .dash-container {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding-bottom: 32px;
+    display: flex; flex-direction: column; gap: 20px; padding-bottom: 32px;
 }
 
+/* Premium Card Base */
 .dash-card {
-    background: var(--color-surface);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    position: relative;
+    overflow: hidden;
 }
-
-.dash-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);
+.dash-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    border-color: var(--card-border-hover);
 }
-.dash-header h1 {
-    margin: 0 0 4px 0;
-    font-size: 24px;
-    color: var(--color-text);
-}
-.dash-header p {
-    margin: 0;
-    font-size: 14px;
-    color: var(--color-text-secondary);
-}
-
-.dash-kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-}
-.dash-kpi {
-    padding: 20px;
-}
-.dash-kpi-top {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-.dash-kpi-title {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.dash-kpi-trend {
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 500;
-}
-.dash-kpi-trend.up { background: rgba(16,185,129,0.1); color: #10b981; }
-.dash-kpi-trend.down { background: rgba(239,68,68,0.1); color: #ef4444; }
-.dash-kpi-value {
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--color-text);
-}
-
-.dash-2col {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 24px;
-}
-.dash-3col {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 24px;
+.dash-card-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
 }
 .dash-panel-title {
-    margin: 0 0 16px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    margin: 0; font-size: 15px; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 8px; letter-spacing: -0.2px;
 }
 
-.dash-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+/* Executive Strip */
+.exec-strip {
+    background: linear-gradient(90deg, rgba(99,102,241,0.1), rgba(139,92,246,0.05), transparent);
+    border-left: 3px solid #8b5cf6;
+    padding: 16px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--card-border); border-right: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border);
 }
-.dash-list-item {
-    display: flex;
-    gap: 12px;
-    padding: 12px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.02);
-}
-
-.dash-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.dash-table th {
-    text-align: left;
-    padding: 8px;
-    color: var(--color-text-secondary);
-    font-size: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.dash-table td {
-    padding: 12px 8px;
-    font-size: 14px;
-    color: var(--color-text);
-    border-bottom: 1px solid rgba(255,255,255,0.02);
+.exec-msg { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; color: var(--color-text); }
+.exec-badges { display: flex; gap: 12px; }
+.exec-badge {
+    font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; text-transform: uppercase;
 }
 
-.chart-placeholder {
-    height: 250px;
-    width: 100%;
-    background: rgba(255,255,255,0.02);
-    border: 1px dashed rgba(255,255,255,0.1);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-secondary);
-    font-size: 14px;
+/* Dense KPI Grid */
+.dash-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.dash-kpi { padding: 20px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+/* CSS SVG Sparklines (No JS needed) */
+.kpi-bg-sparkline {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 50px; opacity: 0.15; z-index: 0; pointer-events: none;
+    background-size: 100% 100%; background-repeat: no-repeat;
 }
+.spark-green { background-image: url("data:image/svg+xml,%3Csvg preserveAspectRatio='none' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L 10 15 L 30 18 L 50 10 L 70 12 L 90 2 L 100 0 L 100 20 Z' fill='%2310b981'/%3E%3Cpath d='M0 20 L 10 15 L 30 18 L 50 10 L 70 12 L 90 2 L 100 0' fill='none' stroke='%2310b981' stroke-width='1.5'/%3E%3C/svg%3E"); }
+.spark-blue { background-image: url("data:image/svg+xml,%3Csvg preserveAspectRatio='none' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L 20 18 L 40 12 L 60 14 L 80 5 L 100 0 L 100 20 Z' fill='%233b82f6'/%3E%3Cpath d='M0 20 L 20 18 L 40 12 L 60 14 L 80 5 L 100 0' fill='none' stroke='%233b82f6' stroke-width='1.5'/%3E%3C/svg%3E"); }
+.spark-purple { background-image: url("data:image/svg+xml,%3Csvg preserveAspectRatio='none' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L 15 15 L 35 15 L 55 8 L 75 10 L 100 0 L 100 20 Z' fill='%238b5cf6'/%3E%3Cpath d='M0 20 L 15 15 L 35 15 L 55 8 L 75 10 L 100 0' fill='none' stroke='%238b5cf6' stroke-width='1.5'/%3E%3C/svg%3E"); }
+.spark-orange { background-image: url("data:image/svg+xml,%3Csvg preserveAspectRatio='none' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L 10 18 L 30 12 L 50 15 L 70 5 L 100 0 L 100 20 Z' fill='%23f59e0b'/%3E%3Cpath d='M0 20 L 10 18 L 30 12 L 50 15 L 70 5 L 100 0' fill='none' stroke='%23f59e0b' stroke-width='1.5'/%3E%3C/svg%3E"); }
 
-@media (max-width: 1024px) {
+.kpi-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; z-index: 1; }
+.kpi-value { font-size: 30px; font-weight: 700; color: var(--color-text); margin: 8px 0; z-index: 1; font-family: 'Inter', sans-serif; letter-spacing: -1px; }
+.kpi-trend { font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; z-index: 1; width: fit-content; }
+.kpi-trend.up { background: var(--success-bg); color: var(--success-text); }
+.kpi-trend.down { background: rgba(239,68,68,0.1); color: #ef4444; }
+.kpi-sub { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; z-index: 1; }
+
+/* 2-Column Main Area */
+.dash-2col { display: grid; grid-template-columns: 2fr 1.2fr; gap: 20px; }
+
+/* Segmented Chart Tabs */
+.chart-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; width: fit-content; margin-bottom: 16px; border: 1px solid var(--card-border); }
+.chart-tab { padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+.chart-tab.active { background: var(--card-bg); color: var(--color-text); box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); }
+
+/* Smart Insights Panel (ChatGPT Enterprise Style) */
+.insight-card {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: all 0.2s;
+}
+.insight-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(99,102,241,0.2); transform: translateX(2px); }
+.insight-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.insight-title { font-size: 14px; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+.insight-confidence { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(99,102,241,0.1); color: #818cf8; font-weight: 600; border: 1px solid rgba(99,102,241,0.2); }
+.insight-body { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+.insight-action { margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--color-primary); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+/* 3-Column Bottom Area */
+.dash-3col { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; }
+
+/* Interconnected Modules */
+.module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.module-btn {
+    background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: 8px; padding: 16px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.module-btn:hover { background: rgba(99,102,241,0.05); border-color: rgba(99,102,241,0.4); transform: translateY(-2px); }
+.module-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: var(--color-text); }
+.module-info h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: var(--color-text); }
+.module-info p { margin: 0; font-size: 12px; color: var(--color-text-secondary); }
+.module-connection { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #8b5cf6; display: flex; align-items: center; gap: 4px; margin-top: auto; }
+.live-pulse { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; position: absolute; top: 16px; right: 16px; }
+
+/* Enhanced Table */
+.premium-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.premium-table th { text-align: left; padding: 12px 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-text-secondary); border-bottom: 1px solid rgba(255,255,255,0.05); letter-spacing: 0.5px; }
+.premium-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.02); vertical-align: middle; }
+.premium-table tr:hover td { background: rgba(255,255,255,0.02); }
+.company-cell { display: flex; align-items: center; gap: 12px; }
+.company-avatar { width: 28px; height: 28px; border-radius: 6px; background: rgba(99,102,241,0.1); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 1px solid rgba(99,102,241,0.2); }
+.company-name { font-size: 13px; font-weight: 600; color: var(--color-text); }
+.status-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px; display: inline-block; }
+.status-pill.healthy { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+.status-pill.risk { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+
+/* Activity Feed */
+.feed-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+.feed-item:last-child { border-bottom: none; }
+.feed-icon { margin-top: 2px; }
+.feed-content h5 { margin: 0 0 2px 0; font-size: 13px; font-weight: 500; color: var(--color-text); }
+.feed-content p { margin: 0; font-size: 12px; color: var(--color-text-secondary); }
+.kpi-details { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--card-border); font-size: 12px; animation: slideDown 0.3s ease forwards; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Tooltip for Modules */
+.module-btn .tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(15,23,42,0.95); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #cbd5e1; opacity: 0; visibility: hidden; transition: all 0.2s; white-space: nowrap; z-index: 10; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.module-btn:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-8px); }
+
+/* Activity Feed scrolling */
+.feed-container { max-height: 280px; overflow-y: auto; padding-right: 8px; }
+.feed-container::-webkit-scrollbar { width: 4px; }
+.feed-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.feed-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); transition: background 0.2s; border-radius: 6px; }
+.feed-item:hover { background: rgba(255,255,255,0.02); }
+
+@media (max-width: 1200px) {
+    .dash-kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .dash-2col, .dash-3col { grid-template-columns: 1fr; }
 }
 </style>
 
 <div class="dash-container">
     
-    <!-- HEADER -->
-    <div class="dash-card dash-header">
+    <!-- PERSONALIZED HEADER -->
+    <div class="dash-card dash-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0px; background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);">
         <div>
-            <h1>Welcome back, Vaishnavi</h1>
-            <p>VenturX AI systems are operating normally.</p>
+            <h1 style="margin: 0 0 6px 0; font-size: 24px; color: var(--color-text); letter-spacing: -0.5px;">Welcome back, Vaishnavi</h1>
+            <p style="margin: 0; font-size: 14px; color: var(--color-text-secondary);">Your AI business ecosystem is performing efficiently today.</p>
         </div>
-        <div>
-            <span style="color:#10b981; background:rgba(16,185,129,0.1); padding:4px 12px; border-radius:12px; font-size:12px;">System Online</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-text-secondary); background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px;">
+                <i data-lucide="clock" style="width:14px;"></i> <span id="dashClock">Loading time...</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <span class="status-pill" style="background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.2);"><i data-lucide="folder" style="width:12px; margin-right:4px;"></i> Workspace: VenturX HQ</span>
+                <span class="status-pill healthy"><i data-lucide="check-circle" style="width:12px; margin-right:4px;"></i> AI Engine Online</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- EXECUTIVE SUMMARY STRIP -->
+    <div class="exec-strip">
+        <div class="exec-msg">
+            <div style="width: 32px; height: 32px; background: var(--primary-gradient); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                <i data-lucide="sparkles" class="icon-sm"></i>
+            </div>
+            <span><strong>VenturX OS:</strong> 3 high-growth opportunities detected across your startup ecosystem this week.</span>
+        </div>
+        <div class="exec-badges">
+            <div class="exec-badge" style="color: #10b981; border-color: rgba(16,185,129,0.2);"><i data-lucide="check-circle" style="width:12px;"></i> System Optimal</div>
+            <div class="exec-badge" style="color: #3b82f6; border-color: rgba(59,130,246,0.2);"><i data-lucide="shield" style="width:12px;"></i> Data Synced</div>
         </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- KPI GRID WITH MICRO-SPARKLINES -->
     <div class="dash-kpi-grid">
-        <div class="dash-card dash-kpi">
-            <div class="dash-kpi-top">
-                <span class="dash-kpi-title"><i data-lucide="indian-rupee" style="width:16px;"></i> Revenue</span>
-                <span class="dash-kpi-trend up">+12%</span>
+        <div class="dash-card dash-kpi" onclick="toggleKPI('revenue')" style="cursor: pointer;" title="Click for details">
+            <div class="kpi-bg-sparkline spark-green"></div>
+            <div class="kpi-title"><i data-lucide="indian-rupee" class="icon-sm"></i> Total Revenue</div>
+            <div>
+                <div class="kpi-value anim-counter" data-target="1245600" data-prefix="₹">0</div>
+                <div class="kpi-trend up"><i data-lucide="trending-up" style="width:12px;"></i> 18%</div>
+                <div class="kpi-sub">vs last month</div>
             </div>
-            <div class="dash-kpi-value">₹12,45,600</div>
+            <div class="kpi-details" id="kpi-detail-revenue">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Top Source:</span>
+                    <span style="color: var(--color-text);">Enterprise Tier</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Monthly Trend:</span>
+                    <span style="color: #10b981;">Consistent Growth</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--color-text-secondary);">Predicted Next Month:</span>
+                    <span style="color: var(--color-text); font-weight: 600;">₹14.2L</span>
+                </div>
+            </div>
         </div>
-        <div class="dash-card dash-kpi">
-            <div class="dash-kpi-top">
-                <span class="dash-kpi-title"><i data-lucide="users" style="width:16px;"></i> Active Clients</span>
-                <span class="dash-kpi-trend up">+4%</span>
+        <div class="dash-card dash-kpi" onclick="toggleKPI('subs')" style="cursor: pointer;" title="Click for details">
+            <div class="kpi-bg-sparkline spark-blue"></div>
+            <div class="kpi-title"><i data-lucide="users" class="icon-sm"></i> Active Subscriptions</div>
+            <div>
+                <div class="kpi-value anim-counter" data-target="124">0</div>
+                <div class="kpi-trend up"><i data-lucide="trending-up" style="width:12px;"></i> 4.2%</div>
+                <div class="kpi-sub">Low churn predicted</div>
             </div>
-            <div class="dash-kpi-value">124</div>
+            <div class="kpi-details" id="kpi-detail-subs">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Churn Rate:</span>
+                    <span style="color: #10b981;">1.2% (Healthy)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Retention:</span>
+                    <span style="color: var(--color-text);">94.5%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--color-text-secondary);">Top Category:</span>
+                    <span style="color: var(--color-text); font-weight: 600;">B2B SaaS</span>
+                </div>
+            </div>
         </div>
-        <div class="dash-card dash-kpi">
-            <div class="dash-kpi-top">
-                <span class="dash-kpi-title"><i data-lucide="brain" style="width:16px;"></i> AI Accuracy</span>
-                <span class="dash-kpi-trend up">+2%</span>
+        <div class="dash-card dash-kpi" onclick="toggleKPI('ai')" style="cursor: pointer;" title="Click for details">
+            <div class="kpi-bg-sparkline spark-purple"></div>
+            <div class="kpi-title"><i data-lucide="brain" class="icon-sm"></i> AI Confidence</div>
+            <div>
+                <div class="kpi-value anim-counter" data-target="94" data-suffix="%">0</div>
+                <div class="kpi-trend up"><i data-lucide="zap" style="width:12px;"></i> Optimized</div>
+                <div class="kpi-sub">Weights recalibrated 2h ago</div>
             </div>
-            <div class="dash-kpi-value">94%</div>
+            <div class="kpi-details" id="kpi-detail-ai">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Model:</span>
+                    <span style="color: var(--color-text);">VenturX-V3</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Data Points:</span>
+                    <span style="color: var(--color-text);">1.2M</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--color-text-secondary);">Last Retrain:</span>
+                    <span style="color: var(--color-text); font-weight: 600;">Today 08:00 AM</span>
+                </div>
+            </div>
         </div>
-        <div class="dash-card dash-kpi">
-            <div class="dash-kpi-top">
-                <span class="dash-kpi-title"><i data-lucide="trending-up" style="width:16px;"></i> Growth</span>
-                <span class="dash-kpi-trend down">-1%</span>
+        <div class="dash-card dash-kpi" onclick="toggleKPI('roi')" style="cursor: pointer;" title="Click for details">
+            <div class="kpi-bg-sparkline spark-orange"></div>
+            <div class="kpi-title"><i data-lucide="megaphone" class="icon-sm"></i> Marketing ROI</div>
+            <div>
+                <div class="kpi-value anim-counter" data-target="3.2" data-suffix="x" data-float="true">0</div>
+                <div class="kpi-trend up"><i data-lucide="trending-up" style="width:12px;"></i> 1.1x</div>
+                <div class="kpi-sub">LinkedIn yielding best results</div>
             </div>
-            <div class="dash-kpi-value">18%</div>
+            <div class="kpi-details" id="kpi-detail-roi">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">Top Channel:</span>
+                    <span style="color: var(--color-text);">LinkedIn B2B</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--color-text-secondary);">CAC:</span>
+                    <span style="color: #10b981;">₹4,200 (Down 5%)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--color-text-secondary);">Active Spend:</span>
+                    <span style="color: var(--color-text); font-weight: 600;">₹45,000</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ANALYTICS & INSIGHTS -->
+    <!-- MAIN ANALYTICS & SMART INSIGHTS -->
     <div class="dash-2col">
+        <!-- Chart Area -->
         <div class="dash-card">
-            <h3 class="dash-panel-title"><i data-lucide="activity" style="width:18px;"></i> Revenue vs Expenses</h3>
-            <!-- CHART REPLACED WITH PLACEHOLDER TO PREVENT CRASHES -->
-            <div class="chart-placeholder">
-                <i data-lucide="bar-chart-2" style="margin-right: 8px;"></i> Revenue Analytics (Charts Disabled for Stability)
-            </div>
-        </div>
-        <div class="dash-card">
-            <h3 class="dash-panel-title"><i data-lucide="sparkles" style="width:18px; color:#a855f7;"></i> AI Insights</h3>
-            <div class="dash-list">
-                <div class="dash-list-item">
-                    <div style="color:#3b82f6;"><i data-lucide="trending-up" style="width:20px;"></i></div>
-                    <div>
-                        <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:600;">Trajectory Optimal</h4>
-                        <p style="margin:0; font-size:13px; color:var(--color-text-secondary);">MRR indicates strong momentum.</p>
-                    </div>
-                </div>
-                <div class="dash-list-item">
-                    <div style="color:#f59e0b;"><i data-lucide="alert-circle" style="width:20px;"></i></div>
-                    <div>
-                        <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:600;">Retention Alert</h4>
-                        <p style="margin:0; font-size:13px; color:var(--color-text-secondary);">Minor variance detected in Pro tier.</p>
-                    </div>
+            <div class="dash-card-header">
+                <h3 class="dash-panel-title"><i data-lucide="bar-chart-2" class="icon-sm text-indigo-400"></i> Analytics Engine</h3>
+                <div class="chart-tabs">
+                    <div class="chart-tab active" onclick="switchChartTab('revenue', this)">Revenue</div>
+                    <div class="chart-tab" onclick="switchChartTab('clients', this)">Clients</div>
+                    <div class="chart-tab" onclick="switchChartTab('aiMetrics', this)">AI Metrics</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- BOTTOM ROW -->
-    <div class="dash-3col">
-        <div class="dash-card">
-            <h3 class="dash-panel-title"><i data-lucide="radio" style="width:18px; color:#10b981;"></i> Activity Feed</h3>
-            <div class="dash-list">
-                <div class="dash-list-item">
-                    <span style="font-size:11px; color:#64748b; font-family:monospace; margin-top:2px;">10:42 AM</span>
-                    <span style="font-size:13px;">Platform data ecosystem synchronized.</span>
-                </div>
-                <div class="dash-list-item">
-                    <span style="font-size:11px; color:#64748b; font-family:monospace; margin-top:2px;">09:15 AM</span>
-                    <span style="font-size:13px;">Invoice #INV-245 paid by <strong>PuneTech Labs</strong></span>
-                </div>
+            <div style="height: 280px; width: 100%; position: relative;">
+                <!-- ONLY ONE STATIC CHART CANVAS -->
+                <canvas id="premiumMainChart"></canvas>
             </div>
         </div>
         
+        <!-- Smart Insights -->
+        <div class="dash-card" style="background: linear-gradient(180deg, var(--card-bg), rgba(15,23,42,0.8));">
+            <div class="dash-card-header">
+                <h3 class="dash-panel-title"><i data-lucide="sparkles" class="icon-sm text-purple-400"></i> AI Intelligence</h3>
+                <div class="insight-confidence" style="background: rgba(16,185,129,0.1); color: #10b981; border-color: rgba(16,185,129,0.2);">Engine Optimal</div>
+            </div>
+            
+            <div class="insight-card">
+                <div class="insight-top">
+                    <div class="insight-title"><i data-lucide="trending-up" class="icon-sm text-blue-400"></i> Trajectory Optimal</div>
+                    <div class="insight-confidence">96% Conf.</div>
+                </div>
+                <div class="insight-body">
+                    Current MRR trend suggests 18% quarter-over-quarter growth. Customer acquisition costs have dropped by 4% in the last 2 weeks.
+                </div>
+                <button style="margin-top: 12px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #60a5fa; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(59,130,246,0.2)'" onmouseout="this.style.background='rgba(59,130,246,0.1)'">Open Forecast</button>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-top">
+                    <div class="insight-title"><i data-lucide="alert-circle" class="icon-sm text-amber-500"></i> Retention Risk</div>
+                    <div class="insight-confidence" style="color: #f59e0b; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2);">82% Conf.</div>
+                </div>
+                <div class="insight-body">
+                    Elevated churn probability detected in 'Pro' tier segment. 12 accounts show decreased activity. Recommend automated retention sequence.
+                </div>
+                <button style="margin-top: 12px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #fbbf24; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(245,158,11,0.2)'" onmouseout="this.style.background='rgba(245,158,11,0.1)'">Launch Campaign</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM SECTION -->
+    <div class="dash-3col">
+        <!-- Top Clients -->
         <div class="dash-card">
-            <h3 class="dash-panel-title"><i data-lucide="building-2" style="width:18px;"></i> Top Clients</h3>
-            <table class="dash-table">
+            <h3 class="dash-panel-title" style="margin-bottom: 20px;"><i data-lucide="building-2" class="icon-sm"></i> Ecosystem Entities</h3>
+            <table class="premium-table">
                 <thead>
-                    <tr><th>Entity</th><th>State</th><th style="text-align:right;">ARR</th></tr>
+                    <tr><th>Entity</th><th>Health</th><th style="text-align:right;">ARR</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Sharma Enterprises</td><td style="color:#10b981;">Active</td><td style="text-align:right;">₹12.5L</td></tr>
-                    <tr><td>Mehta Technologies</td><td style="color:#10b981;">Active</td><td style="text-align:right;">₹9.8L</td></tr>
-                    <tr><td>Verma Digital</td><td style="color:#3b82f6;">Scaling</td><td style="text-align:right;">₹8.5L</td></tr>
+                    <tr>
+                        <td>
+                            <div class="company-cell">
+                                <div class="company-avatar">SE</div>
+                                <span class="company-name">Sharma Ent.</span>
+                            </div>
+                        </td>
+                        <td><span class="status-pill healthy">Optimal</span></td>
+                        <td style="text-align:right; font-weight:600; font-size:13px;">₹12.5L</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="company-cell">
+                                <div class="company-avatar" style="background:rgba(16,185,129,0.1); color:#10b981; border-color:rgba(16,185,129,0.2);">MT</div>
+                                <span class="company-name">Mehta Tech</span>
+                            </div>
+                        </td>
+                        <td><span class="status-pill healthy">Optimal</span></td>
+                        <td style="text-align:right; font-weight:600; font-size:13px;">₹9.8L</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="company-cell">
+                                <div class="company-avatar" style="background:rgba(245,158,11,0.1); color:#f59e0b; border-color:rgba(245,158,11,0.2);">VD</div>
+                                <span class="company-name">Verma Digital</span>
+                            </div>
+                        </td>
+                        <td><span class="status-pill risk">At Risk</span></td>
+                        <td style="text-align:right; font-weight:600; font-size:13px;">₹4.5L</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
 
+        <!-- Connected Modules -->
         <div class="dash-card">
-            <h3 class="dash-panel-title"><i data-lucide="grid" style="width:18px;"></i> Modules</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <a href="#/crm" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
-                    <i data-lucide="users" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
-                    <span style="font-size:14px; font-weight:600;">CRM</span>
+            <h3 class="dash-panel-title" style="margin-bottom: 20px;"><i data-lucide="grid" class="icon-sm"></i> VenturX Modules</h3>
+            <div class="module-grid">
+                <a href="#/crm" class="module-btn">
+                    <div class="tooltip">24 leads awaiting follow-up</div>
+                    <div class="live-pulse"></div>
+                    <div class="module-icon"><i data-lucide="users"></i></div>
+                    <div class="module-info">
+                        <h4>CRM Hub</h4>
+                        <p>124 Active</p>
+                    </div>
+                    <div class="module-connection"><i data-lucide="link" style="width:10px;"></i> Drives Retention</div>
                 </a>
-                <a href="#/financials" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
-                    <i data-lucide="wallet" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
-                    <span style="font-size:14px; font-weight:600;">Financials</span>
+                <a href="#/marketing" class="module-btn">
+                    <div class="tooltip">3 campaigns currently active</div>
+                    <div class="module-icon"><i data-lucide="megaphone"></i></div>
+                    <div class="module-info">
+                        <h4>Marketing</h4>
+                        <p>3 Campaigns</p>
+                    </div>
+                    <div class="module-connection"><i data-lucide="link" style="width:10px;"></i> Drives Revenue</div>
                 </a>
-                <a href="#/marketing" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
-                    <i data-lucide="megaphone" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
-                    <span style="font-size:14px; font-weight:600;">Marketing</span>
+                <a href="#/financials" class="module-btn">
+                    <div class="tooltip">No anomalies detected</div>
+                    <div class="module-icon"><i data-lucide="wallet"></i></div>
+                    <div class="module-info">
+                        <h4>Financials</h4>
+                        <p>Live Sync</p>
+                    </div>
+                    <div class="module-connection"><i data-lucide="link" style="width:10px;"></i> Core Metrics</div>
                 </a>
-                <a href="#/forecasting" style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; text-decoration:none; color:var(--color-text);">
-                    <i data-lucide="brain" style="color:var(--color-primary); margin-bottom:8px;"></i><br>
-                    <span style="font-size:14px; font-weight:600;">Forecasting</span>
+                <a href="#/forecasting" class="module-btn">
+                    <div class="tooltip">Model accuracy: 96%</div>
+                    <div class="module-icon"><i data-lucide="brain"></i></div>
+                    <div class="module-info">
+                        <h4>ML Engine</h4>
+                        <p>Online</p>
+                    </div>
+                    <div class="module-connection"><i data-lucide="link" style="width:10px;"></i> Powers Insights</div>
                 </a>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="dash-card">
+            <h3 class="dash-panel-title" style="margin-bottom: 20px;"><i data-lucide="radio" class="icon-sm text-green-400"></i> Event Stream</h3>
+            <div class="feed-container" id="activityFeed">
+                <div class="feed-item">
+                    <div class="feed-icon"><i data-lucide="check-circle" class="icon-sm text-green-500"></i></div>
+                    <div class="feed-content">
+                        <h5>Financial Sync Complete</h5>
+                        <p>Invoice #INV-245 paid by PuneTech Labs.</p>
+                        <div class="feed-time">Just now</div>
+                    </div>
+                </div>
+                <div class="feed-item">
+                    <div class="feed-icon"><i data-lucide="refresh-cw" class="icon-sm text-purple-500"></i></div>
+                    <div class="feed-content">
+                        <h5>Model Retrained</h5>
+                        <p>Forecasting weights updated with CRM data.</p>
+                        <div class="feed-time">2 mins ago</div>
+                    </div>
+                </div>
+                <div class="feed-item">
+                    <div class="feed-icon"><i data-lucide="target" class="icon-sm text-blue-500"></i></div>
+                    <div class="feed-content">
+                        <h5>Campaign Optimized</h5>
+                        <p>B2B Retargeting budget reallocated by AI.</p>
+                        <div class="feed-time">1 hour ago</div>
+                    </div>
+                </div>
+                <div class="feed-item">
+                    <div class="feed-icon"><i data-lucide="user-plus" class="icon-sm text-amber-500"></i></div>
+                    <div class="feed-content">
+                        <h5>Lead Converted</h5>
+                        <p>Sharma Enterprises upgraded to Pro Tier.</p>
+                        <div class="feed-time">3 hours ago</div>
+                    </div>
+                </div>
+                <div class="feed-item">
+                    <div class="feed-icon"><i data-lucide="shield-alert" class="icon-sm text-red-500"></i></div>
+                    <div class="feed-content">
+                        <h5>Anomaly Detected</h5>
+                        <p>Slight dip in API traffic for US East.</p>
+                        <div class="feed-time">5 hours ago</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

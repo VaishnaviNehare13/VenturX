@@ -124,11 +124,18 @@ const Router = (() => {
  }
 
  function currentHash() {
-  return location.hash || '#/';
+  return location.hash || '#/dashboard';
  }
 
  function init() {
   window.addEventListener('hashchange', () => navigate(currentHash()));
+  
+  // Trigger initial render
+  if (!location.hash || location.hash === '#/') {
+   location.hash = '#/dashboard';
+  } else {
+   navigate(currentHash());
+  }
  }
 
  return { init, navigate, currentHash };
