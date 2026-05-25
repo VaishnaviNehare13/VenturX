@@ -1,0 +1,106 @@
+<div class="public-page">
+  <nav class="public-navbar" id="publicNavbar">
+  <a href="#/" class="public-brand">
+    <div style="width:32px;height:32px;background:linear-gradient(135deg, #6366f1, #a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">V</div> VenturX
+  </a>
+  <div class="public-nav-links">
+    <a href="#/features">Features</a>
+    <a href="#/pricing">Pricing</a>
+    <a href="#/about">About</a>
+    <a href="#/contact">Contact</a>
+  </div>
+  <div class="public-auth-buttons">
+    <a href="#/login" class="public-btn-login">Log In</a>
+    <a href="#/signup" class="public-btn-signup">Get Started</a>
+  </div>
+</nav>
+  <section class="public-section" style="padding-top: 140px;">
+    <div class="section-header">
+      <h2>Transparent Pricing</h2>
+      <p>Plans that scale with your startup.</p>
+    </div>
+    <div class="public-grid-3">
+      <div class="pricing-card">
+        <h3>Starter</h3>
+        <div class="pricing-price">₹499<span>/mo</span></div>
+        <ul class="pricing-features">
+          <li><i data-lucide="check"></i> Basic Analytics</li>
+          <li><i data-lucide="check"></i> CRM Access (up to 1k users)</li>
+          <li><i data-lucide="check"></i> 10 AI Forecasts / month</li>
+        </ul>
+        <a href="#/signup" class="public-btn-outline" style="width:100%; text-align:center; display:block; box-sizing:border-box;">Start Free Trial</a>
+      </div>
+      <div class="pricing-card featured">
+        <h3>Growth <span style="font-size:12px;background:var(--public-primary);padding:4px 8px;border-radius:12px;color:white;vertical-align:middle;margin-left:8px;">Popular</span></h3>
+        <div class="pricing-price">₹1999<span>/mo</span></div>
+        <ul class="pricing-features">
+          <li><i data-lucide="check"></i> Advanced AI Analytics</li>
+          <li><i data-lucide="check"></i> Campaign Intelligence</li>
+          <li><i data-lucide="check"></i> Unlimited Forecasts</li>
+          <li><i data-lucide="check"></i> Priority Support</li>
+        </ul>
+        <a href="#/signup" class="public-btn-signup" style="width:100%; text-align:center; display:block; box-sizing:border-box;">Get Growth</a>
+      </div>
+      <div class="pricing-card">
+        <h3>Enterprise</h3>
+        <div class="pricing-price">Custom</div>
+        <ul class="pricing-features">
+          <li><i data-lucide="check"></i> Everything in Growth</li>
+          <li><i data-lucide="check"></i> Dedicated Account Manager</li>
+          <li><i data-lucide="check"></i> Custom AI Models</li>
+          <li><i data-lucide="check"></i> SSO Integration</li>
+        </ul>
+        <a href="#/contact" class="public-btn-outline" style="width:100%; text-align:center; display:block; box-sizing:border-box;">Contact Sales</a>
+      </div>
+    </div>
+  </section>
+  <footer class="public-footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="public-brand">
+        <div style="width:32px;height:32px;background:linear-gradient(135deg, #6366f1, #a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">V</div> VenturX
+      </div>
+      <p>The AI Operating System for Modern Startups. Automate forecasting, optimize campaigns, and scale faster.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#/features">Features</a></li>
+        <li><a href="#/pricing">Pricing</a></li>
+        <li><a href="#/login">Dashboard</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#/about">About Us</a></li>
+        <li><a href="#/contact">Contact</a></li>
+        <li><a href="#/contact">Careers</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#/contact">Privacy Policy</a></li>
+        <li><a href="#/contact">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>&copy; 2026 VenturX. All rights reserved.</div>
+    <div>Built for modern founders.</div>
+  </div>
+</footer>
+<script>
+  // Navbar scroll effect
+  setTimeout(() => {
+    const c = document.getElementById('content');
+    if (c) {
+      c.addEventListener('scroll', function() {
+        if(this.scrollTop > 50) document.getElementById('publicNavbar').classList.add('scrolled');
+        else document.getElementById('publicNavbar').classList.remove('scrolled');
+      });
+    }
+  }, 100);
+</script>
+</div>

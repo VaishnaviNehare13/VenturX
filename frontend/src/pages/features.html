@@ -1,0 +1,104 @@
+<div class="public-page">
+  <nav class="public-navbar" id="publicNavbar">
+  <a href="#/" class="public-brand">
+    <div style="width:32px;height:32px;background:linear-gradient(135deg, #6366f1, #a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">V</div> VenturX
+  </a>
+  <div class="public-nav-links">
+    <a href="#/features">Features</a>
+    <a href="#/pricing">Pricing</a>
+    <a href="#/about">About</a>
+    <a href="#/contact">Contact</a>
+  </div>
+  <div class="public-auth-buttons">
+    <a href="#/login" class="public-btn-login">Log In</a>
+    <a href="#/signup" class="public-btn-signup">Get Started</a>
+  </div>
+</nav>
+  <section class="public-section" style="padding-top: 140px;">
+    <div class="section-header">
+      <h2>Platform Features</h2>
+      <p>Deep dive into the AI modules powering VenturX.</p>
+    </div>
+    <div class="public-grid-3">
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="trending-up"></i></div>
+        <h3>Forecasting</h3>
+        <p>Our proprietary ML engine analyzes your startup's financial history to project revenue, expenses, and runway for the next 6 months. Plan with confidence.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="megaphone"></i></div>
+        <h3>Marketing</h3>
+        <p>Stop guessing which campaigns will work. AI evaluates ad copy, channels, and budgets to predict conversion rates before you spend a dime.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="users"></i></div>
+        <h3>CRM & Segmentation</h3>
+        <p>Interactive UMAP scatter plots and automated clustering group your customers by behavior, helping you tailor your outreach.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="zap"></i></div>
+        <h3>Recommendations</h3>
+        <p>Get personalized product up-sell recommendations for every client in your database based on their purchase history.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="pie-chart"></i></div>
+        <h3>Financials</h3>
+        <p>Real-time P&L tracking, expense categorization, and intelligent cost-reduction insights.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="briefcase"></i></div>
+        <h3>Workflow Optimization</h3>
+        <p>Analyze team productivity and automate repetitive operational tasks.</p>
+      </div>
+    </div>
+  </section>
+  <footer class="public-footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="public-brand">
+        <div style="width:32px;height:32px;background:linear-gradient(135deg, #6366f1, #a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">V</div> VenturX
+      </div>
+      <p>The AI Operating System for Modern Startups. Automate forecasting, optimize campaigns, and scale faster.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#/features">Features</a></li>
+        <li><a href="#/pricing">Pricing</a></li>
+        <li><a href="#/login">Dashboard</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#/about">About Us</a></li>
+        <li><a href="#/contact">Contact</a></li>
+        <li><a href="#/contact">Careers</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#/contact">Privacy Policy</a></li>
+        <li><a href="#/contact">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>&copy; 2026 VenturX. All rights reserved.</div>
+    <div>Built for modern founders.</div>
+  </div>
+</footer>
+<script>
+  // Navbar scroll effect
+  setTimeout(() => {
+    const c = document.getElementById('content');
+    if (c) {
+      c.addEventListener('scroll', function() {
+        if(this.scrollTop > 50) document.getElementById('publicNavbar').classList.add('scrolled');
+        else document.getElementById('publicNavbar').classList.remove('scrolled');
+      });
+    }
+  }, 100);
+</script>
+</div>

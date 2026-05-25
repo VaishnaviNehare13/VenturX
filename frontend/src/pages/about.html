@@ -1,0 +1,78 @@
+<div class="public-page">
+  <nav class="public-navbar" id="publicNavbar">
+  <a href="#/" class="public-brand">
+    <div style="width:32px;height:32px;background:linear-gradient(135deg, #6366f1, #a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">V</div> VenturX
+  </a>
+  <div class="public-nav-links">
+    <a href="#/features">Features</a>
+    <a href="#/pricing">Pricing</a>
+    <a href="#/about">About</a>
+    <a href="#/contact">Contact</a>
+  </div>
+  <div class="public-auth-buttons">
+    <a href="#/login" class="public-btn-login">Log In</a>
+    <a href="#/signup" class="public-btn-signup">Get Started</a>
+  </div>
+</nav>
+  <section class="public-section" style="padding-top: 140px;">
+    <div class="section-header">
+      <h2>About VenturX</h2>
+      <p>Building the brain for modern startups.</p>
+    </div>
+    <div style="max-width: 800px; margin: 0 auto; line-height: 1.8; color: var(--public-muted); font-size: 18px;">
+      <p style="margin-bottom: 24px;">VenturX was founded with a single mission: to democratize access to enterprise-grade AI for startups everywhere. Too often, early-stage companies fail not because their idea is bad, but because they lack the data insights to make the right operational and financial decisions.</p>
+      <p style="margin-bottom: 24px;">We've built an AI Operating System that integrates directly with your business data to provide real-time forecasting, marketing optimization, and customer intelligence.</p>
+      <h3 style="color: var(--public-text); margin: 40px 0 20px;">Our Technology</h3>
+      <p>VenturX is powered by a robust Python Flask microservices architecture, running advanced Machine Learning models (like XGBoost for forecasting, and UMAP for segmentation) connected to a blazing-fast Vanilla JS frontend dashboard.</p>
+    </div>
+  </section>
+  <footer class="public-footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="public-brand">
+        <div style="width:32px;height:32px;background:linear-gradient(135deg, #6366f1, #a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">V</div> VenturX
+      </div>
+      <p>The AI Operating System for Modern Startups. Automate forecasting, optimize campaigns, and scale faster.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#/features">Features</a></li>
+        <li><a href="#/pricing">Pricing</a></li>
+        <li><a href="#/login">Dashboard</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#/about">About Us</a></li>
+        <li><a href="#/contact">Contact</a></li>
+        <li><a href="#/contact">Careers</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#/contact">Privacy Policy</a></li>
+        <li><a href="#/contact">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>&copy; 2026 VenturX. All rights reserved.</div>
+    <div>Built for modern founders.</div>
+  </div>
+</footer>
+<script>
+  // Navbar scroll effect
+  setTimeout(() => {
+    const c = document.getElementById('content');
+    if (c) {
+      c.addEventListener('scroll', function() {
+        if(this.scrollTop > 50) document.getElementById('publicNavbar').classList.add('scrolled');
+        else document.getElementById('publicNavbar').classList.remove('scrolled');
+      });
+    }
+  }, 100);
+</script>
+</div>
