@@ -33,75 +33,11 @@ window.initCRMPage = function() {
 };
 
 function loadCustomers() {
- const stored = localStorage.getItem("saasCustomers");
- if (stored) {
-  saasCustomers = JSON.parse(stored);
-  // Force migration if old western demo data is still in localStorage
-  if (saasCustomers.length > 0 && saasCustomers[0].fullName === 'Elena Rodriguez') {
-    saasCustomers = null; // force fallback below
-  }
- } 
- 
- if (!saasCustomers) {
-  saasCustomers = [
-   {
-    id: 'user_1',
-    fullName: 'Aarav Sharma',
-    email: 'aarav@bharatai.in',
-    startupName: 'BharatAI Solutions',
-    startupIndustry: 'Data Science',
-    subscriptionPlan: 'enterprise',
-    joinedDate: new Date(Date.now() - 90 * 24*60*60*1000).toISOString(),
-    activityLevel: 'Highly Active',
-    aiToolsUsed: 4,
-    status: 'Investor Ready',
-    lastActive: new Date().toISOString(),
-    forecastsCreated: 14,
-    campaignsCreated: 8,
-    segmentationReports: 5,
-    crmInteractions: 120
-   },
-   {
-    id: 'user_2',
-    fullName: 'Priya Patil',
-    email: 'priya@punetechlabs.in',
-    startupName: 'PuneTech Labs',
-    startupIndustry: 'Finance',
-    subscriptionPlan: 'pro',
-    joinedDate: new Date(Date.now() - 30 * 24*60*60*1000).toISOString(),
-    activityLevel: 'Highly Active',
-    aiToolsUsed: 3,
-    status: 'High Growth Potential',
-    lastActive: new Date().toISOString(),
-    forecastsCreated: 6,
-    campaignsCreated: 2,
-    segmentationReports: 2,
-    crmInteractions: 45
-   },
-   {
-    id: 'user_3',
-    fullName: 'Rohan Deshmukh',
-    email: 'rohan@finedgeindia.in',
-    startupName: 'FinEdge India',
-    startupIndustry: 'Healthcare',
-    subscriptionPlan: 'free',
-    joinedDate: new Date(Date.now() - 5 * 24*60*60*1000).toISOString(),
-    activityLevel: 'Moderate',
-    aiToolsUsed: 1,
-    status: 'Expansion Opportunity',
-    lastActive: new Date(Date.now() - 2 * 24*60*60*1000).toISOString(),
-    forecastsCreated: 1,
-    campaignsCreated: 0,
-    segmentationReports: 0,
-    crmInteractions: 2
-   }
-  ];
-  saveCustomersToStorage();
- }
+ saasCustomers = window.PlatformData.crm;
 }
 
 function saveCustomersToStorage() {
- localStorage.setItem("saasCustomers", JSON.stringify(saasCustomers));
+ window.PlatformEngine.savePlatformData("crm");
 }
 
 // AI Lead Scoring Logic
@@ -288,6 +224,7 @@ window.handleAddLead = function(e) {
   const index = saasCustomers.findIndex(l => l.id === editingLeadId);
   if (index !== -1) {
    saasCustomers[index] = { ...saasCustomers[index], ...leadData };
+   window.PlatformEngine.logActivity('crm', `Updated CRM Lead: ${leadData.startupName}`);
   }
  } else {
   saasCustomers.push({
@@ -299,6 +236,7 @@ window.handleAddLead = function(e) {
    crmInteractions: 0,
    ...leadData
   });
+  window.PlatformEngine.logActivity('crm', `Added new CRM Lead: ${leadData.startupName}`);
  }
  
  saveCustomersToStorage();
@@ -335,7 +273,10 @@ window.editLead = function(id) {
 
 window.deleteLead = function(id) {
  if (confirm("Are you sure you want to delete this startup?")) {
+  const deleted = saasCustomers.find(l => l.id === id);
+  if (deleted) window.PlatformEngine.logActivity('crm', `Deleted CRM Lead: ${deleted.startupName}`);
   saasCustomers = saasCustomers.filter(l => l.id !== id);
+  window.PlatformData.crm = saasCustomers; // sync array reference
   saveCustomersToStorage();
   renderLeads();
   updatePipelineStats();

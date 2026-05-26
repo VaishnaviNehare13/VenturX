@@ -24,7 +24,7 @@ function createMarketingChart() {
  
  const colors = getChartColors();
  
- const existing = JSON.parse(localStorage.getItem('campaigns') || '[]');
+ const existing = window.PlatformData.campaigns;
  let social = 0, email = 0, ppc = 0, display = 0, content = 0;
  
  if (existing.length === 0) {
@@ -94,7 +94,7 @@ function createPerformanceChart() {
  
  const colors = getChartColors();
  
- const existing = JSON.parse(localStorage.getItem('campaigns') || '[]');
+ const existing = window.PlatformData.campaigns;
  let totalLeads = 0;
  existing.forEach(c => totalLeads += (parseInt(c.expectedLeads) || 0));
  
@@ -327,9 +327,10 @@ function saveCampaign(e) {
   roi: metrics.predictedROI
  };
 
- const campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
+ const campaigns = window.PlatformData.campaigns;
  campaigns.push(newCampaign);
- localStorage.setItem("campaigns", JSON.stringify(campaigns));
+ window.PlatformEngine.logActivity('campaign', `Campaign launched: ${newCampaign.name}`);
+ window.PlatformEngine.savePlatformData("marketing");
  
  showToast(`Campaign "${newCampaign.name}" launched successfully!`);
  closeNewCampaignModal();
@@ -341,9 +342,11 @@ function saveCampaign(e) {
 }
 
 function deleteCampaign(id) {
- const existing = JSON.parse(localStorage.getItem('campaigns') || '[]');
+ const existing = window.PlatformData.campaigns;
  const filtered = existing.filter(c => c.id !== id);
- localStorage.setItem('campaigns', JSON.stringify(filtered));
+ window.PlatformData.campaigns = filtered;
+ window.PlatformEngine.logActivity('campaign', `Campaign deleted: ${id}`);
+ window.PlatformEngine.savePlatformData("marketing");
  renderActiveCampaigns();
  loadCampaignStats();
  createMarketingChart();
@@ -373,7 +376,7 @@ function generateAIRecommendations(campaign) {
 }
 
 function viewCampaign(id) {
- const existing = JSON.parse(localStorage.getItem('campaigns') || '[]');
+ const existing = window.PlatformData.campaigns;
  const campaign = existing.find(c => c.id === id);
  
  if (!campaign) {
@@ -432,7 +435,7 @@ function renderActiveCampaigns() {
     return;
   }
 
-  const campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
+  const campaigns = window.PlatformData.campaigns;
 
   if (campaigns.length === 0) {
     const demoCampaign = {
@@ -445,7 +448,8 @@ function renderActiveCampaigns() {
       status: "Active"
     };
     campaigns.push(demoCampaign);
-    localStorage.setItem("campaigns", JSON.stringify(campaigns));
+    window.PlatformEngine.logActivity('campaign', `Demo campaign created: ${demoCampaign.name}`);
+    window.PlatformEngine.savePlatformData("marketing");
   }
 
   if (campaigns.length === 0) {
@@ -617,7 +621,7 @@ function updateMarketingDashboard() {
 }
 
 function loadCampaignStats() {
- const existing = JSON.parse(localStorage.getItem('campaigns') || '[]');
+ const existing = window.PlatformData.campaigns;
  
  if (existing.length === 0) {
   animateValue('predictedConversions', 0, 0, 1000);

@@ -17,6 +17,10 @@ async function initializeSegmentation() {
   console.log("FULL API DATA:", data);
   segmentsData = data;
   
+  window.PlatformData.segmentation.push(data);
+  window.PlatformEngine.logActivity('segmentation', `Segmentation analysis completed for ${data.metrics?.total_customers || 0} customers`);
+  window.PlatformEngine.savePlatformData("segmentation");
+  
   updateUI(data);
  } catch (error) {
   console.error("Segmentation API Error:", error);

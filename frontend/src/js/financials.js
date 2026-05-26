@@ -83,6 +83,16 @@ window.initFinancialsPage = async function() {
       resultDiv.style.display = 'block';
       valueDiv.textContent = '₹' + Math.round(res.predicted_profit).toLocaleString('en-IN');
       textDiv.innerHTML = `Model: ${res.model}<br>R² Score: ${res.r2_score || 0.978}`;
+      
+      if (!window.PlatformData.financials) window.PlatformData.financials = [];
+      window.PlatformData.financials.push({
+        type: 'prediction',
+        inputs: { rd, admin, mkt },
+        result: res
+      });
+      window.PlatformEngine.logActivity('financial', `Profit prediction run: ₹${Math.round(res.predicted_profit).toLocaleString('en-IN')}`);
+      window.PlatformEngine.savePlatformData("financials");
+      
     } catch(e) {
       console.error(e);
     }

@@ -1,0 +1,82 @@
+<div class="admin-layout" data-layout="admin">
+  
+  <!-- Admin Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-brand">
+      <div class="admin-brand-logo">V</div>
+      VenturX Admin
+    </div>
+    
+    <nav class="admin-nav">
+      <div class="admin-nav-section">Dashboard</div>
+      <a class="admin-nav-item active" data-admin-tab="overview">
+        <i data-lucide="layout-dashboard"></i> Overview
+      </a>
+      
+      <div class="admin-nav-section">Operations</div>
+      <a class="admin-nav-item" data-admin-tab="users">
+        <i data-lucide="users"></i> Users
+      </a>
+      <a class="admin-nav-item" data-admin-tab="subscriptions">
+        <i data-lucide="credit-card"></i> Subscriptions
+      </a>
+      
+      <div class="admin-nav-section">Intelligence</div>
+      <a class="admin-nav-item" data-admin-tab="ai-analytics">
+        <i data-lucide="brain"></i> AI Analytics
+      </a>
+      <a class="admin-nav-item" data-admin-tab="recommendations">
+        <i data-lucide="zap"></i> Recommendation Engine
+      </a>
+      
+      <div class="admin-nav-section">System</div>
+      <a class="admin-nav-item" data-admin-tab="health">
+        <i data-lucide="activity"></i> Platform Health
+      </a>
+      <a class="admin-nav-item" data-admin-tab="reports">
+        <i data-lucide="file-text"></i> Reports
+      </a>
+      <a class="admin-nav-item" data-admin-tab="settings">
+        <i data-lucide="settings"></i> Settings
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Admin Main -->
+  <div class="admin-main">
+    
+    <!-- Admin Topbar -->
+    <header class="admin-topbar">
+      <div class="admin-topbar-title" id="adminTopTitle">Control Center Overview</div>
+      <div class="admin-topbar-actions">
+        <div class="admin-live-sync-banner" id="adminLiveSyncIndicator">
+          <span class="admin-pulse-indicator live" style="margin:0;"></span>
+          Live Sync Active
+        </div>
+        <button class="admin-btn"><i data-lucide="bell" style="width: 16px; height: 16px;"></i></button>
+        <button class="admin-btn" onclick="window.location.hash='#/'"><i data-lucide="log-out" style="width: 16px; height: 16px;"></i> Exit Admin</button>
+        <div class="admin-profile" title="Admin">A</div>
+      </div>
+    </header>
+
+    <!-- Admin Content Area -->
+    <main class="admin-content-area" id="adminContentArea">
+      
+      <!-- Views will be lazy-rendered here by admin.js -->
+      <div id="admin-view-overview" class="admin-view active"></div>
+      <div id="admin-view-users" class="admin-view"></div>
+      <div id="admin-view-subscriptions" class="admin-view"></div>
+      <div id="admin-view-ai-analytics" class="admin-view"></div>
+      <div id="admin-view-recommendations" class="admin-view"></div>
+      <div id="admin-view-health" class="admin-view"></div>
+      <div id="admin-view-reports" class="admin-view"></div>
+      <div id="admin-view-settings" class="admin-view"></div>
+
+    </main>
+
+  </div>
+
+  <!-- Interactive Overlays -->
+  <div id="admin-overlay-root" class="admin-overlay-root"></div>
+
+</div>

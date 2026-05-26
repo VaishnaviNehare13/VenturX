@@ -1,29 +1,54 @@
 window.PlatformData = {
+  users: [],
   crm: [],
   campaigns: [],
-  branding: [],
-  segmentation: [],
   forecasts: [],
-  transactions: [],
-  analyticsEvents: [],
+  recommendations: [],
+  subscriptions: [],
+  notifications: [],
   aiUsage: [],
-  notifications: []
+  segmentation: [],
+  branding: [],
+  content: [],
+  analytics: [],
+  financials: [],
+  activityFeed: [],
+  reports: [],
+  settings: {},
+  accounts: [],
+  workspaces: [],
+  recommendationMetrics: {
+    generated: 0,
+    accepted: 0,
+    dismissed: 0,
+    highestConfidence: [],
+    mostTriggered: []
+  }
 };
 
-function savePlatformData() {
+function savePlatformData(moduleName = "core") {
   localStorage.setItem(
-    "platformData",
+    "venturx_platform_data",
     JSON.stringify(window.PlatformData)
   );
   // Dispatch global event for live syncing
-  window.dispatchEvent(new Event("platform:data-updated"));
+  window.dispatchEvent(
+    new CustomEvent("platform:data-updated", {
+      detail: { module: moduleName }
+    })
+  );
 }
 
 function loadPlatformData() {
-  const saved = localStorage.getItem("platformData");
+  const saved = localStorage.getItem("venturx_platform_data");
 
   if (saved) {
-    window.PlatformData = JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    window.PlatformData = { ...window.PlatformData, ...parsed };
+    // Ensure nested objects like recommendationMetrics aren't overwritten completely if missing fields
+    if(!window.PlatformData.recommendationMetrics) {
+      window.PlatformData.recommendationMetrics = { generated: 0, accepted: 0, dismissed: 0, highestConfidence: [], mostTriggered: [] };
+    }
   } else {
     // Initial load / Migration
     window.PlatformData.crm = JSON.parse(localStorage.getItem("saasCustomers") || "[]");
@@ -37,8 +62,8 @@ function calculateTotalRevenue() {
     let rev = customer.revenue;
     // Fallback for legacy customers without explicit revenue property
     if (rev === undefined) {
-      if (customer.plan === 'Enterprise' || customer.activityLevel === 'High') rev = 299;
-      else if (customer.plan === 'Pro' || customer.activityLevel === 'Medium') rev = 49;
+      if (customer.subscriptionPlan === 'enterprise' || customer.plan === 'Enterprise' || customer.activityLevel === 'Highly Active') rev = 299;
+      else if (customer.subscriptionPlan === 'pro' || customer.plan === 'Pro' || customer.activityLevel === 'Moderate') rev = 49;
       else rev = 15;
     }
     return sum + (parseFloat(rev) || 0);
@@ -57,11 +82,21 @@ function calculateNetProfit() {
 }
 
 function calculateMRR() {
-  return calculateTotalRevenue() / 12;
+  return calculateTotalRevenue(); // Adjusted as calculateTotalRevenue is acting as MRR
 }
 
 function calculateBurnRate() {
   return calculateTotalExpenses() / 6;
+}
+
+function logActivity(type, message, user = "System") {
+  window.PlatformData.activityFeed.unshift({
+    type,
+    message,
+    timestamp: Date.now(),
+    user
+  });
+  savePlatformData("activity");
 }
 
 function addNotification(message) {
@@ -70,7 +105,7 @@ function addNotification(message) {
     timestamp: new Date().toISOString()
   });
 
-  savePlatformData();
+  savePlatformData("notifications");
 }
 
 loadPlatformData();
@@ -83,6 +118,7 @@ window.PlatformEngine = {
   calculateNetProfit,
   calculateMRR,
   calculateBurnRate,
+  logActivity,
   addNotification
 };
 

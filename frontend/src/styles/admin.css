@@ -1,0 +1,917 @@
+/* src/styles/admin.css - Isolated Admin Control Center Styles */
+
+/* Global Reset for Admin */
+* {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+html, body, #app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base overrides for Admin Layout */
+[data-layout="admin"] {
+  background: #050816;
+  color: #e2e8f0;
+  min-height: 100vh;
+  font-family: 'Google Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+[data-layout="admin"] #sidebar,
+[data-layout="admin"] #sidebar-overlay,
+[data-layout="admin"] #topbar,
+[data-layout="admin"] #footer {
+  display: none !important;
+}
+
+[data-layout="admin"] .content {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
+/* Admin Layout Grid */
+.admin-layout {
+  display: flex;
+  width: 100vw;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #050816;
+}
+
+.admin-sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: rgba(13, 17, 28, 0.95);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 50;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.admin-main {
+  flex: 1;
+  width: calc(100vw - 300px);
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-topbar {
+  height: 70px;
+  width: 100%;
+  background: rgba(13, 17, 28, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.admin-content-area {
+  width: 100%;
+  padding: 32px;
+  box-sizing: border-box;
+  flex-grow: 1;
+}
+
+/* Sidebar Components */
+.admin-brand {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #fff;
+  gap: 12px;
+}
+
+.admin-brand-logo {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.admin-nav {
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #94a3b8;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.admin-nav-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #f8fafc;
+}
+
+.admin-nav-item.active {
+  background: rgba(225, 29, 72, 0.1);
+  color: #f43f5e;
+  border-color: rgba(225, 29, 72, 0.2);
+}
+
+.admin-nav-item svg {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-nav-section {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #475569;
+  margin: 16px 0 8px 16px;
+  font-weight: 600;
+}
+
+/* Topbar Components */
+.admin-topbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+}
+
+.admin-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-btn-primary {
+  background: #e11d48;
+  color: white;
+}
+
+.admin-btn-primary:hover {
+  background: #be123c;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.admin-profile {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border: 2px solid #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* View Container (Lazy loaded tabs) */
+.admin-view {
+  display: none;
+  animation: adminFadeIn 0.3s ease;
+}
+
+.admin-view.active {
+  display: block;
+}
+
+.admin-page {
+  width: 100%;
+  flex: 1;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+@keyframes adminFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Admin Grid System */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+/* Grid column utilities disabled due to auto-fit rendering */
+
+ /* Dynamic Charts */
+ .admin-chart-wrapper {
+     background: rgba(15, 23, 42, 0.4);
+     border: 1px solid rgba(255, 255, 255, 0.05);
+     border-radius: 8px;
+     padding: 16px;
+     height: 320px;
+     width: 100%;
+     position: relative;
+ }
+
+ /* --- PREMIUM UPGRADE STYLES --- */
+ 
+ /* Executive Intelligence Strip */
+ .admin-executive-strip {
+     background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%);
+     border: 1px solid rgba(16, 185, 129, 0.2);
+     border-radius: 8px;
+     padding: 16px 24px;
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 24px;
+ }
+ 
+ .admin-executive-text {
+     font-size: 15px;
+     color: #f8fafc;
+     font-weight: 500;
+     display: flex;
+     align-items: center;
+     gap: 12px;
+ }
+ 
+ .admin-executive-metrics {
+     display: flex;
+     gap: 24px;
+ }
+ 
+ .admin-executive-metric {
+     display: flex;
+     flex-direction: column;
+     align-items: flex-end;
+ }
+ 
+ /* Live Sync Indicator */
+ .admin-live-sync-banner {
+     background: rgba(16, 185, 129, 0.1);
+     border: 1px solid rgba(16, 185, 129, 0.3);
+     color: #10b981;
+     padding: 4px 12px;
+     border-radius: 16px;
+     font-size: 12px;
+     font-weight: 600;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+ }
+ 
+ .sync-pulse {
+     animation: syncFlash 1s ease;
+ }
+ 
+ @keyframes syncFlash {
+     0% { transform: scale(1); background: transparent; }
+     50% { transform: scale(1.05); background: rgba(16, 185, 129, 0.2); }
+     100% { transform: scale(1); background: transparent; }
+ }
+ 
+ /* Terminal Log Window */
+ .admin-terminal-window {
+     background: #000;
+     border-radius: 8px;
+     border: 1px solid #334155;
+     padding: 16px;
+     height: 250px;
+     overflow-y: hidden;
+     font-family: 'Courier New', Courier, monospace;
+     color: #10b981;
+     font-size: 13px;
+     position: relative;
+ }
+ 
+ .admin-terminal-content {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+     animation: scrollUp 10s linear infinite;
+ }
+ 
+ @keyframes scrollUp {
+     0% { transform: translateY(0); }
+     100% { transform: translateY(-50%); }
+ }
+ 
+ /* Confidence Rings & Heatmap */
+ .admin-confidence-ring {
+     width: 64px;
+     height: 64px;
+     border-radius: 50%;
+     border: 4px solid rgba(16, 185, 129, 0.2);
+     border-top-color: #10b981;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     font-weight: 700;
+     font-size: 14px;
+     color: #fff;
+ }
+ 
+ .admin-ai-grid {
+     display: grid;
+     grid-template-columns: repeat(2, 1fr);
+     gap: 16px;
+ }
+ 
+ .admin-ai-card {
+     background: rgba(255, 255, 255, 0.02);
+     border: 1px solid rgba(255, 255, 255, 0.05);
+     padding: 16px;
+     border-radius: 8px;
+ }
+ 
+ .admin-ai-card h4 {
+     margin: 0 0 8px 0;
+     color: #94a3b8;
+     font-size: 13px;
+ }
+ 
+ .admin-ai-card .value {
+     font-size: 20px;
+     color: #f8fafc;
+     font-weight: 600;
+ }
+
+/* KPI Cards */
+.admin-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-kpi-card {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.admin-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(225, 29, 72, 0.3);
+}
+
+.admin-kpi-title {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.admin-kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 12px;
+  font-family: 'Google Sans Display', sans-serif;
+}
+
+.admin-kpi-trend {
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-kpi-trend.positive { color: #10b981; }
+.admin-kpi-trend.negative { color: #ef4444; }
+
+.admin-kpi-sparkline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  opacity: 0.3;
+}
+
+/* Tables */
+.admin-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: #f1f5f9;
+  font-size: 14px;
+}
+
+.admin-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.admin-badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.admin-badge-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.admin-badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.admin-badge-info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+/* Status Pulses */
+.admin-pulse-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+}
+
+.admin-pulse-indicator.live {
+  background: #10b981;
+}
+
+.admin-pulse-indicator.live::after {
+  content: '';
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  animation: adminPulse 2s infinite ease-out;
+}
+
+@keyframes adminPulse {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* User Avatars in table */
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: white;
+}
+
+/* Recommendation System Styles */
+.admin-recommendation-card {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-rec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.admin-rec-trigger {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.admin-rec-body {
+  font-size: 15px;
+  color: #f8fafc;
+  line-height: 1.5;
+}
+
+.admin-rec-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.admin-progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100px;
+}
+
+.admin-progress-fill {
+  height: 100%;
+  background: #10b981;
+}
+
+/* Chart Containers */
+.admin-chart-container {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.admin-section-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+ / *   I n t e r a c t i v e   A n a l y t i c s   D a s h b o a r d   A d d i t i o n s   * / 
+ 
+ . a d m i n - c a r d - i n t e r a c t i v e   { 
+     c u r s o r :   p o i n t e r ; 
+     t r a n s i t i o n :   a l l   0 . 3 s   c u b i c - b e z i e r ( 0 . 4 ,   0 ,   0 . 2 ,   1 ) ; 
+ } 
+ 
+ . a d m i n - c a r d - i n t e r a c t i v e : h o v e r   { 
+     t r a n s f o r m :   t r a n s l a t e Y ( - 4 p x )   s c a l e ( 1 . 0 2 ) ; 
+     b o r d e r - c o l o r :   r g b a ( 2 4 4 ,   6 3 ,   9 4 ,   0 . 4 ) ; 
+     b o x - s h a d o w :   0   1 0 p x   2 5 p x   - 5 p x   r g b a ( 2 2 5 ,   2 9 ,   7 2 ,   0 . 1 5 ) ,   0   8 p x   1 0 p x   - 6 p x   r g b a ( 2 2 5 ,   2 9 ,   7 2 ,   0 . 1 ) ; 
+ } 
+ 
+ . a d m i n - t a b l e - r o w - i n t e r a c t i v e   { 
+     c u r s o r :   p o i n t e r ; 
+     t r a n s i t i o n :   b a c k g r o u n d   0 . 2 s ; 
+ } 
+ 
+ . a d m i n - t a b l e - r o w - i n t e r a c t i v e : h o v e r   t d   { 
+     b a c k g r o u n d :   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 0 4 ) ; 
+ } 
+ 
+ / *   M o d a l   &   D r a w e r   O v e r l a y s   * / 
+ . a d m i n - o v e r l a y - r o o t   { 
+     p o s i t i o n :   f i x e d ; 
+     t o p :   0 ; 
+     l e f t :   0 ; 
+     w i d t h :   1 0 0 v w ; 
+     h e i g h t :   1 0 0 v h ; 
+     z - i n d e x :   1 0 0 0 ; 
+     p o i n t e r - e v e n t s :   n o n e ; 
+     d i s p l a y :   f l e x ; 
+     j u s t i f y - c o n t e n t :   f l e x - e n d ;   / *   D r a w e r   d e f a u l t   * / 
+ } 
+ 
+ . a d m i n - o v e r l a y - r o o t . a c t i v e   { 
+     p o i n t e r - e v e n t s :   a u t o ; 
+ } 
+ 
+ . a d m i n - b a c k d r o p   { 
+     p o s i t i o n :   a b s o l u t e ; 
+     i n s e t :   0 ; 
+     b a c k g r o u n d :   r g b a ( 5 ,   8 ,   2 2 ,   0 . 8 ) ; 
+     b a c k d r o p - f i l t e r :   b l u r ( 8 p x ) ; 
+     o p a c i t y :   0 ; 
+     t r a n s i t i o n :   o p a c i t y   0 . 3 s   e a s e ; 
+ } 
+ 
+ . a d m i n - o v e r l a y - r o o t . a c t i v e   . a d m i n - b a c k d r o p   { 
+     o p a c i t y :   1 ; 
+ } 
+ 
+ / *   S i d e   D r a w e r   * / 
+ . a d m i n - d r a w e r   { 
+     p o s i t i o n :   r e l a t i v e ; 
+     w i d t h :   5 0 0 p x ; 
+     m a x - w i d t h :   9 0 v w ; 
+     h e i g h t :   1 0 0 v h ; 
+     b a c k g r o u n d :   # 0 d 1 1 1 c ; 
+     b o r d e r - l e f t :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
+     b o x - s h a d o w :   - 1 0 p x   0   3 0 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 5 ) ; 
+     t r a n s f o r m :   t r a n s l a t e X ( 1 0 0 % ) ; 
+     t r a n s i t i o n :   t r a n s f o r m   0 . 3 s   c u b i c - b e z i e r ( 0 . 1 6 ,   1 ,   0 . 3 ,   1 ) ; 
+     d i s p l a y :   f l e x ; 
+     f l e x - d i r e c t i o n :   c o l u m n ; 
+ } 
+ 
+ . a d m i n - o v e r l a y - r o o t . a c t i v e   . a d m i n - d r a w e r   { 
+     t r a n s f o r m :   t r a n s l a t e X ( 0 ) ; 
+ } 
+ 
+ . a d m i n - d r a w e r - h e a d e r   { 
+     p a d d i n g :   2 4 p x ; 
+     b o r d e r - b o t t o m :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 0 5 ) ; 
+     d i s p l a y :   f l e x ; 
+     j u s t i f y - c o n t e n t :   s p a c e - b e t w e e n ; 
+     a l i g n - i t e m s :   c e n t e r ; 
+ } 
+ 
+ . a d m i n - d r a w e r - t i t l e   { 
+     f o n t - s i z e :   1 8 p x ; 
+     f o n t - w e i g h t :   6 0 0 ; 
+     c o l o r :   # f f f ; 
+ } 
+ 
+ . a d m i n - d r a w e r - c l o s e   { 
+     b a c k g r o u n d :   n o n e ; 
+     b o r d e r :   n o n e ; 
+     c o l o r :   # 9 4 a 3 b 8 ; 
+     c u r s o r :   p o i n t e r ; 
+     p a d d i n g :   8 p x ; 
+     d i s p l a y :   f l e x ; 
+     a l i g n - i t e m s :   c e n t e r ; 
+     j u s t i f y - c o n t e n t :   c e n t e r ; 
+     b o r d e r - r a d i u s :   5 0 % ; 
+     t r a n s i t i o n :   b a c k g r o u n d   0 . 2 s ,   c o l o r   0 . 2 s ; 
+ } 
+ 
+ . a d m i n - d r a w e r - c l o s e : h o v e r   { 
+     b a c k g r o u n d :   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
+     c o l o r :   # f f f ; 
+ } 
+ 
+ . a d m i n - d r a w e r - b o d y   { 
+     f l e x :   1 ; 
+     o v e r f l o w - y :   a u t o ; 
+     p a d d i n g :   2 4 p x ; 
+ } 
+ 
+ / *   C e n t e r   M o d a l   * / 
+ . a d m i n - o v e r l a y - r o o t . m o d a l - m o d e   { 
+     j u s t i f y - c o n t e n t :   c e n t e r ; 
+     a l i g n - i t e m s :   c e n t e r ; 
+ } 
+ 
+ . a d m i n - m o d a l   { 
+     p o s i t i o n :   r e l a t i v e ; 
+     w i d t h :   6 0 0 p x ; 
+     m a x - w i d t h :   9 5 v w ; 
+     m a x - h e i g h t :   9 0 v h ; 
+     b a c k g r o u n d :   # 0 d 1 1 1 c ; 
+     b o r d e r :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
+     b o r d e r - r a d i u s :   1 2 p x ; 
+     b o x - s h a d o w :   0   2 5 p x   5 0 p x   - 1 2 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 5 ) ; 
+     t r a n s f o r m :   s c a l e ( 0 . 9 5 ) ; 
+     o p a c i t y :   0 ; 
+     t r a n s i t i o n :   a l l   0 . 3 s   c u b i c - b e z i e r ( 0 . 1 6 ,   1 ,   0 . 3 ,   1 ) ; 
+     d i s p l a y :   n o n e ; 
+     f l e x - d i r e c t i o n :   c o l u m n ; 
+ } 
+ 
+ . a d m i n - o v e r l a y - r o o t . m o d a l - m o d e . a c t i v e   . a d m i n - m o d a l   { 
+     t r a n s f o r m :   s c a l e ( 1 ) ; 
+     o p a c i t y :   1 ; 
+     d i s p l a y :   f l e x ; 
+ } 
+ 
+ . a d m i n - o v e r l a y - r o o t . m o d a l - m o d e   . a d m i n - d r a w e r   { 
+     d i s p l a y :   n o n e ; 
+ } 
+ 
+ / *   F o r m   C o n t r o l s   * / 
+ . a d m i n - i n p u t - g r o u p   { 
+     d i s p l a y :   f l e x ; 
+     g a p :   1 2 p x ; 
+     m a r g i n - b o t t o m :   2 4 p x ; 
+ } 
+ 
+ . a d m i n - i n p u t - w r a p p e r   { 
+     p o s i t i o n :   r e l a t i v e ; 
+     f l e x :   1 ; 
+ } 
+ 
+ . a d m i n - i n p u t - i c o n   { 
+     p o s i t i o n :   a b s o l u t e ; 
+     l e f t :   1 2 p x ; 
+     t o p :   5 0 % ; 
+     t r a n s f o r m :   t r a n s l a t e Y ( - 5 0 % ) ; 
+     c o l o r :   # 9 4 a 3 b 8 ; 
+     p o i n t e r - e v e n t s :   n o n e ; 
+ } 
+ 
+ . a d m i n - i n p u t   { 
+     w i d t h :   1 0 0 % ; 
+     b a c k g r o u n d :   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 0 5 ) ; 
+     b o r d e r :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
+     p a d d i n g :   1 0 p x   1 2 p x   1 0 p x   4 0 p x ; 
+     b o r d e r - r a d i u s :   8 p x ; 
+     c o l o r :   # f 8 f a f c ; 
+     f o n t - f a m i l y :   i n h e r i t ; 
+     f o n t - s i z e :   1 4 p x ; 
+     t r a n s i t i o n :   b o r d e r - c o l o r   0 . 2 s ,   b o x - s h a d o w   0 . 2 s ; 
+ } 
+ 
+ . a d m i n - i n p u t : f o c u s   { 
+     o u t l i n e :   n o n e ; 
+     b o r d e r - c o l o r :   # f 4 3 f 5 e ; 
+     b o x - s h a d o w :   0   0   0   3 p x   r g b a ( 2 4 4 ,   6 3 ,   9 4 ,   0 . 2 ) ; 
+ } 
+ 
+ . a d m i n - s e l e c t   { 
+     b a c k g r o u n d :   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 0 5 ) ; 
+     b o r d e r :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
+     p a d d i n g :   1 0 p x   1 6 p x ; 
+     b o r d e r - r a d i u s :   8 p x ; 
+     c o l o r :   # f 8 f a f c ; 
+     f o n t - f a m i l y :   i n h e r i t ; 
+     f o n t - s i z e :   1 4 p x ; 
+     c u r s o r :   p o i n t e r ; 
+ } 
+ 
+ . a d m i n - s e l e c t : f o c u s   { 
+     o u t l i n e :   n o n e ; 
+     b o r d e r - c o l o r :   # f 4 3 f 5 e ; 
+ } 
+ 
+ / *   E m p t y   S t a t e s   * / 
+ . a d m i n - e m p t y - s t a t e   { 
+     d i s p l a y :   f l e x ; 
+     f l e x - d i r e c t i o n :   c o l u m n ; 
+     a l i g n - i t e m s :   c e n t e r ; 
+     j u s t i f y - c o n t e n t :   c e n t e r ; 
+     p a d d i n g :   4 8 p x   2 4 p x ; 
+     t e x t - a l i g n :   c e n t e r ; 
+     c o l o r :   # 9 4 a 3 b 8 ; 
+ } 
+ 
+ . a d m i n - e m p t y - i c o n   { 
+     w i d t h :   4 8 p x ; 
+     h e i g h t :   4 8 p x ; 
+     m a r g i n - b o t t o m :   1 6 p x ; 
+     o p a c i t y :   0 . 5 ; 
+ } 
+ 
+ . a d m i n - e m p t y - t i t l e   { 
+     f o n t - s i z e :   1 6 p x ; 
+     f o n t - w e i g h t :   6 0 0 ; 
+     c o l o r :   # e 2 e 8 f 0 ; 
+     m a r g i n - b o t t o m :   8 p x ; 
+ } 
+ 
+ / *   D y n a m i c   C h a r t s   * / 
+ . a d m i n - c h a r t - w r a p p e r   { 
+     b a c k g r o u n d :   r g b a ( 1 5 ,   2 3 ,   4 2 ,   0 . 4 ) ; 
+     b o r d e r :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 0 5 ) ; 
+     b o r d e r - r a d i u s :   8 p x ; 
+     p a d d i n g :   1 6 p x ; 
+     h e i g h t :   3 2 0 p x ; 
+     w i d t h :   1 0 0 % ; 
+ } 
+  
+ 
+/* --- DENSITY UPGRADE STYLES --- */
+.admin-card-compact {
+    padding: 12px;
+}
+.admin-micro-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 8px;
+    margin-right: 8px;
+}
+.admin-chart-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #f8fafc;
+    z-index: 10;
+    text-align: right;
+    pointer-events: none;
+}
+.admin-chart-overlay.left {
+    right: auto;
+    left: 8px;
+    text-align: left;
+}
+.admin-chart-overlay .overlay-title {
+    color: #94a3b8;
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+.admin-chart-overlay .overlay-value {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* --- LIVE ENTERPRISE ANIMATIONS --- */
+.admin-transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes pulse-fast {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+@keyframes pulse-slow {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.admin-pulse-fast {
+    animation: pulse-fast 1.5s infinite;
+}
+.admin-pulse-slow {
+    animation: pulse-slow 3s infinite;
+}
+.admin-anim-slide-down {
+    animation: slideDown 0.4s ease-out forwards;
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

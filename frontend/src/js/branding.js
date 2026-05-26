@@ -99,16 +99,17 @@ async function generateBrandIdentity() {
     Innovating the future with AI.</p>
   `;
 
-  localStorage.setItem(
-    "latestBrand",
-    JSON.stringify({
-      startupName,
-      industry,
-      vibe,
-      color,
-      svgLogo
-    })
-  );
+  const brandData = {
+    startupName,
+    industry,
+    vibe,
+    color,
+    svgLogo
+  };
+
+  window.PlatformData.branding.push(brandData);
+  window.PlatformEngine.logActivity('branding', `Brand identity generated for ${startupName}`);
+  window.PlatformEngine.savePlatformData("branding");
 }
 
 window.generateBrandIdentity = generateBrandIdentity;

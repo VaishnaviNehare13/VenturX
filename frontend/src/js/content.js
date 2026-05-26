@@ -82,17 +82,22 @@ window.initContentHub = function() {
 
 // Data Persistence
 function loadContentData() {
- const storedDrafts = localStorage.getItem("contentDrafts");
- const storedSchedule = localStorage.getItem("contentSchedule");
- const storedComments = localStorage.getItem("contentComments");
+ if (!window.PlatformData.content || Array.isArray(window.PlatformData.content)) {
+   window.PlatformData.content = { drafts: [], schedule: [], comments: [] };
+ }
  
- if (storedDrafts) contentDrafts = JSON.parse(storedDrafts);
- if (storedSchedule) contentSchedule = JSON.parse(storedSchedule);
- if (storedComments) contentComments = JSON.parse(storedComments);
+ contentDrafts = window.PlatformData.content.drafts || [];
+ contentSchedule = window.PlatformData.content.schedule || [];
+ contentComments = window.PlatformData.content.comments || [];
 }
 
 function saveData(key, data) {
- localStorage.setItem(key, JSON.stringify(data));
+ window.PlatformData.content.drafts = contentDrafts;
+ window.PlatformData.content.schedule = contentSchedule;
+ window.PlatformData.content.comments = contentComments;
+ 
+ window.PlatformEngine.logActivity('content', `Content updated`);
+ window.PlatformEngine.savePlatformData("content");
 }
 
 // AI Content Generation Engine

@@ -40,26 +40,4 @@
       </div>
     </div>
   </div>
-  <script>
-    document.getElementById('doLoginBtn').addEventListener('click', () => {
-      const email = document.getElementById('loginEmail').value;
-      if(!email) return alert('Enter email');
-      
-      // Setup session
-      const user = {
-        name: 'Demo Founder',
-        email: email,
-        initials: 'DF',
-        role: email.includes('admin') ? 'admin' : 'user'
-      };
-      
-      if(window.Auth) {
-        window.Auth.login(user);
-        window.location.hash = user.role === 'admin' ? '#/admin' : '#/dashboard';
-      } else {
-        localStorage.setItem('user', JSON.stringify(user));
-        window.location.hash = '#/dashboard';
-      }
-    });
-  </script>
 </div>

@@ -62,15 +62,7 @@
         <input type="password" placeholder="••••••••">
       </div>
       
-      <button class="auth-btn" onclick="
-        if(window.Auth) {
-          window.Auth.login({ name: 'New Founder', email: 'new@startup.com', initials: 'NF', role: 'user' });
-          window.location.hash = '#/dashboard';
-        } else {
-          localStorage.setItem('user', JSON.stringify({ name: 'New Founder', role: 'user' }));
-          window.location.hash = '#/dashboard';
-        }
-      ">Create Workspace</button>
+      <button class="auth-btn" id="doSignupBtn">Create Workspace</button>
       
       <div class="auth-links">
         Already have a workspace? <a href="#/login">Sign in</a>

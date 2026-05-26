@@ -9,14 +9,16 @@ async function loadComponent(selector, path) {
 
 // Authentication state
 const Auth = {
- isLoggedIn: () => localStorage.getItem('user') !== null,
- getUser: () => JSON.parse(localStorage.getItem('user') || '{}'),
- login: (user) => {
-  localStorage.setItem('user', JSON.stringify(user));
+ isLoggedIn: () => localStorage.getItem('venturx_session') !== null,
+ getUser: () => JSON.parse(localStorage.getItem('venturx_session') || '{}'),
+ login: (session) => {
+  console.log("SESSION WRITE:", session);
+  localStorage.setItem('venturx_session', JSON.stringify(session));
   updateAuthUI();
  },
  logout: () => {
-  localStorage.removeItem('user');
+  console.log("SESSION UPDATED: LOGGED OUT");
+  localStorage.removeItem('venturx_session');
   updateAuthUI();
   Router.navigate('#/login');
  }
@@ -99,9 +101,25 @@ async function bootstrap() {
 
  // Mount chatbot widget
  mountChatbot();
+ 
+ const session = JSON.parse(localStorage.getItem("venturx_session"));
+ console.log("Startup Session:", session);
+ 
+ if (!session) {
+   console.log("No active session");
+   Router.init();
+   return;
+ }
+ 
+ if (session.isLoggedIn) {
+  const route = session.role === "admin" ? "#/admin" : "#/dashboard";
+  console.log("Redirecting To:", route);
+  if (!location.hash || location.hash === '#/' || location.hash === '#/login' || location.hash === '#/signup') {
+    location.hash = route;
+  }
+ }
 
  Router.init();
- Router.navigate(Router.currentHash());
 }
 
 document.addEventListener('DOMContentLoaded', bootstrap);

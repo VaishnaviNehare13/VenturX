@@ -22,7 +22,8 @@ const Router = (() => {
   '#/login': 'src/pages/login.html',
   '#/signup': 'src/pages/signup.html',
   '#/notifications': 'src/pages/notifications.html',
-  '#/support': 'src/pages/support.html'
+  '#/support': 'src/pages/support.html',
+  '#/admin': 'src/pages/admin.html'
  };
 
  const publicRoutes = ['#/', '#/features', '#/pricing', '#/about', '#/contact', '#/login', '#/signup'];
@@ -47,6 +48,7 @@ const Router = (() => {
   const el = document.querySelector(targetSelector);
   if (!el) return;
   el.innerHTML = await fetchHTML(path);
+  
   // page transition
   el.classList.add('page-enter');
   requestAnimationFrame(() => {
@@ -93,11 +95,22 @@ const Router = (() => {
   await loadScript('src/js/branding.js', true);
  }
 
+ async function loadAdminDependencies() {
+  await loadScript('src/js/admin.js');
+ }
+
  async function navigate(hash) {
+  console.log("ACTIVE SESSION:", JSON.parse(localStorage.getItem("venturx_session")));
+   
+  if (window.currentRoute === hash) return;
+  window.currentRoute = hash;
+
   const isPublic = publicRoutes.includes(hash);
   
+  const session = JSON.parse(localStorage.getItem("venturx_session"));
+  
   // Protected Route Middleware
-  if (!isPublic && window.Auth && !window.Auth.isLoggedIn()) {
+  if (!isPublic && !session) {
    window.location.hash = '#/login';
    return;
   }
@@ -113,14 +126,32 @@ const Router = (() => {
     return;
   }
 
+  // Admin access control
+  if (hash === '#/admin') {
+    const session = JSON.parse(localStorage.getItem("venturx_session"));
+    if (!session || session.role !== 'admin') {
+      window.location.hash = '#/login';
+      return;
+    }
+  }
+
   const path = routes[hash] || routes['#/'];
 
   try {
+   console.log("Loading Route:", hash);
+   if (hash === '#/admin') console.log("Attempting Admin Route Load");
+
    // SAFELY DESTROY DASHBOARD CHARTS TO PREVENT MEMORY LEAKS
-   if (window.destroyDashboardCharts) window.destroyDashboardCharts();
+   if (window.Chart) {
+     for (let id in Chart.instances) {
+       Chart.instances[id].destroy();
+     }
+   }
 
    // Lazy load dashboard assets if navigating to internal route
-   if (!isPublic) {
+   if (hash === '#/admin') {
+    await loadAdminDependencies();
+   } else if (!isPublic) {
     await loadDashboardDependencies();
    }
    
@@ -143,14 +174,29 @@ const Router = (() => {
     }
     descMeta.content = meta.desc;
 
+   } else if (hash === '#/admin') {
+    document.documentElement.setAttribute('data-layout', 'admin');
+    document.title = 'VenturX | Admin Control Center';
    } else {
     document.documentElement.removeAttribute('data-layout');
     document.title = 'VenturX Dashboard';
    }
+   
+   document.documentElement.setAttribute('data-module', hash.replace('#/', '') || 'landing');
 
    document.dispatchEvent(new CustomEvent('page:loaded', { detail: { hash } }));
 
-   if (!isPublic) {
+   if (hash === '#/login') {
+    if (window.initLogin) window.initLogin();
+   } else if (hash === '#/signup') {
+    if (window.initSignup) window.initSignup();
+   } else if (hash === '#/admin') {
+    console.log("Admin JS Loaded");
+    console.log(window.initAdminDashboard);
+    if (window.initAdminDashboard) {
+      window.initAdminDashboard();
+    }
+   } else if (!isPublic) {
     if (hash === '#/segmentation' && window.initializeSegmentation) window.initializeSegmentation();
     if (hash === '#/dashboard' && window.initDashboardPage) window.initDashboardPage();
     if (hash === '#/forecasting' && window.initializeForecasting) window.initializeForecasting();
@@ -168,16 +214,26 @@ const Router = (() => {
     }
    }
   } catch (err) {
-   console.error(err);
+   console.error("Route load error:", err);
    const content = document.getElementById('content');
    if (content) {
-    content.innerHTML = `<div class="public-page" style="display:flex;align-items:center;justify-content:center;height:60vh;padding:20px;text-align:center;">
-      <div style="background:var(--public-surface, #fff);border:1px solid var(--public-border, #ccc);padding:40px;border-radius:16px;max-width:500px;">
-        <h3 style="margin-bottom:16px;color:var(--public-text, #333);">Page Not Found</h3>
-        <p style="color:var(--public-muted, #666);margin-bottom:24px;">Failed to load ${hash}.</p>
-        <button onclick="window.location.hash='#/'" class="public-btn-signup">Return Home</button>
-      </div>
-    </div>`;
+    if (hash === '#/admin') {
+      content.innerHTML = `<div class="public-page" style="display:flex;align-items:center;justify-content:center;height:60vh;padding:20px;text-align:center;">
+        <div style="background:var(--public-surface, #fff);border:1px solid var(--public-border, #ccc);padding:40px;border-radius:16px;max-width:500px;">
+          <h3 style="margin-bottom:16px;color:#ef4444;">Admin module failed to initialize</h3>
+          <p style="color:var(--public-muted, #666);margin-bottom:24px;">There was an error initializing the control center.</p>
+          <button onclick="window.location.hash='#/'" class="public-btn-signup">Return Home</button>
+        </div>
+      </div>`;
+    } else {
+      content.innerHTML = `<div class="public-page" style="display:flex;align-items:center;justify-content:center;height:60vh;padding:20px;text-align:center;">
+        <div style="background:var(--public-surface, #fff);border:1px solid var(--public-border, #ccc);padding:40px;border-radius:16px;max-width:500px;">
+          <h3 style="margin-bottom:16px;color:var(--public-text, #333);">Page Not Found</h3>
+          <p style="color:var(--public-muted, #666);margin-bottom:24px;">Failed to load ${hash}.</p>
+          <button onclick="window.location.hash='#/'" class="public-btn-signup">Return Home</button>
+        </div>
+      </div>`;
+    }
    }
   } finally {
    if (window.lucide && window.lucide.createIcons) {

@@ -424,6 +424,10 @@ async function runStartupAnalysis(payload) {
   
   currentForecastData = formattedData;
   
+  window.PlatformData.forecasts.push(formattedData);
+  window.PlatformEngine.logActivity('forecast', `Forecast generated for ${payload.startup_name}`);
+  window.PlatformEngine.savePlatformData("forecasting");
+  
   // Update headers and titles dynamically
   const headerTitle = document.querySelector('.page-header h2');
   if (headerTitle) headerTitle.textContent = `${payload.startup_name} Analysis`;
