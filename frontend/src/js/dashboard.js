@@ -6,6 +6,36 @@ let premiumMainChart = null;
 window.initDashboardPage = function() {
     console.log("INITIALIZING VENTURX PREMIUM DASHBOARD");
 
+    // Session Sync
+    const sessionStr = localStorage.getItem("venturx_session");
+    if (sessionStr) {
+        try {
+            const session = JSON.parse(sessionStr);
+            if (!session.name || !session.email) {
+                localStorage.removeItem("venturx_session");
+                window.location.hash = "#/login";
+                return;
+            } else {
+                const welcomeTitle = document.querySelector('.dash-header h1');
+                if (welcomeTitle) {
+                    welcomeTitle.innerHTML = `Welcome back, ${session.name.split(' ')[0]}`;
+                }
+                const workspaceTitle = document.querySelector('.dash-header .status-pill:first-child');
+                if (workspaceTitle) {
+                    const wsName = session.company || session.name + "'s HQ";
+                    workspaceTitle.innerHTML = `<i data-lucide="folder" style="width:12px; margin-right:4px;"></i> Workspace: ${wsName}`;
+                }
+            }
+        } catch (e) {
+            localStorage.removeItem("venturx_session");
+            window.location.hash = "#/login";
+            return;
+        }
+    } else {
+        window.location.hash = "#/login";
+        return;
+    }
+
     // 1. Safety Guard
     setTimeout(() => {
         document.body.classList.remove("loading");

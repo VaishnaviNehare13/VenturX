@@ -254,6 +254,52 @@ window.AdminUI = {
   }
 };
 
+
+window.LiveMongoUsers = null;
+
+function renderUsers(mongoUsers) {
+    if (!Array.isArray(mongoUsers)) return;
+    window.LiveMongoUsers = mongoUsers.map(u => ({
+        id: u._id,
+        name: u.name || u.company || 'Unknown Workspace',
+        email: u.email || 'contact@workspace.com',
+        plan: u.plan || 'Starter',
+        status: u.status || 'Active',
+        metrics: {
+            churnRisk: u.churn_risk || 'Low',
+            aiUsageScore: u.ai_engagement || Math.floor(Math.random() * 50 + 20),
+            revenueContribution: u.revenue || 0,
+            activeCampaigns: Math.floor(Math.random() * 5)
+        }
+    }));
+    
+    // Trigger re-render if Users tab is active
+    if (window.AdminState && window.AdminState.currentTab === 'users') {
+        const activeView = document.getElementById('admin-view-users');
+        setTimeout(() => {
+            if (
+                activeView &&
+                window.renderAdminTab &&
+                document.body.contains(activeView)
+            ) {
+                window.renderAdminTab('users', activeView, true);
+            }
+        }, 50);
+    }
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch("http://127.0.0.1:5000/api/users");
+        if (!response.ok) throw new Error("API response not OK");
+        const users = await response.json();
+        console.log("Live MongoDB Users:", users);
+        renderUsers(users);
+    } catch (error) {
+        console.error("Failed to load users:", error);
+    }
+}
+
 window.initAdminDashboard = function() {
   const navItems = document.querySelectorAll('.admin-nav-item');
   navItems.forEach(item => {
@@ -267,8 +313,12 @@ window.initAdminDashboard = function() {
       
       const activeView = document.getElementById(`admin-view-${tab}`);
       if (activeView) {
+        console.log("Rendering users safely...");
         activeView.classList.add('active');
-        document.getElementById('adminTopTitle').textContent = item.textContent.trim();
+        const adminTopTitle = document.getElementById('adminTopTitle');
+        if (adminTopTitle) {
+          adminTopTitle.textContent = item.textContent.trim();
+        }
         window.AdminState.currentTab = tab;
         localStorage.setItem('admin_currentTab', tab);
         renderAdminTab(tab, activeView);
@@ -295,8 +345,12 @@ window.initAdminDashboard = function() {
   // Enterprise Live Event Loop
   if (!window.AdminState.liveInterval) {
     window.AdminState.liveInterval = setInterval(() => {
-      if (document.getElementById('adminPanel').classList.contains('active')) {
-        window.dispatchEvent(new CustomEvent('admin:live-tick'));
+      const adminPanel = document.getElementById('adminPanel');
+      if (adminPanel) {
+        console.log("Rendering users safely...");
+        if (adminPanel.classList.contains('active')) {
+          window.dispatchEvent(new CustomEvent('admin:live-tick'));
+        }
       }
     }, 4500); // Tick every 4.5 seconds
   }
@@ -352,6 +406,9 @@ window.initAdminDashboard = function() {
       });
     }
   });
+
+  // Load live MongoDB users
+  loadUsers();
 };
 
 const renderedTabs = new Set();
@@ -360,7 +417,10 @@ function renderAdminTab(tab, container, force = false) {
   if (renderedTabs.has(tab) && !force && tab !== 'recommendations' && tab !== 'users') return;
   renderedTabs.add(tab);
   
+  if (!container) return;
+
   if (!window.AdminEngine) {
+    console.log("Rendering users safely...");
     container.innerHTML = `<div class="admin-empty-state"><div class="admin-empty-title">Loading Admin Engine...</div></div>`;
     return;
   }
@@ -369,6 +429,7 @@ function renderAdminTab(tab, container, force = false) {
   window.AdminUI.destroyAllCharts();
   
   try {
+    console.log("Rendering users safely...");
     switch(tab) {
       case 'overview': container.innerHTML = getOverviewHTML(); bindOverviewEvents(); break;
       case 'users': container.innerHTML = getUsersHTML(); bindUserEvents(); break;
@@ -381,7 +442,10 @@ function renderAdminTab(tab, container, force = false) {
     }
   } catch (err) {
     console.error("Admin Render Error:", err);
-    container.innerHTML = `<div style="padding: 20px; color: #ef4444;">Failed to load view: ${err.message}</div>`;
+    console.log("Rendering users safely...");
+    if (container) {
+      container.innerHTML = `<div style="padding: 20px; color: #ef4444;">Failed to load view: ${err.message}</div>`;
+    }
   }
   
   if (window.lucide) window.lucide.createIcons();
@@ -577,7 +641,7 @@ function bindOverviewEvents() {
 
 // --- Users ---
 function getUsersHTML() {
-  const accounts = window.AdminEngine.getAccountsData() || [];
+  const accounts = window.LiveMongoUsers || window.AdminEngine.getAccountsData() || [];
   const query = window.AdminState.searchQuery.toLowerCase();
   
   const filtered = accounts.filter(acc => 

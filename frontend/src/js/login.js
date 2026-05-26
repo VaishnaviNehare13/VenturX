@@ -10,37 +10,63 @@ window.initLogin = function() {
     let loginInProgress = false;
 
     // Step 3: Single login handler
-    newBtn.addEventListener('click', () => {
+    newBtn.addEventListener('click', async () => {
         if (loginInProgress) return;
         loginInProgress = true;
 
         const emailInput = document.getElementById('loginEmail');
-        if(!emailInput) return;
+        const passwordInput = document.getElementById('loginPassword');
+        if(!emailInput || !passwordInput) return;
         
         const email = emailInput.value.trim();
-        if(!email) {
+        const password = passwordInput.value;
+        if(!email || !password) {
             loginInProgress = false;
-            return alert('Enter email');
+            return alert('Enter email and password');
         }
         
-        const role = email === "admin@venturx.in" ? "admin" : "user";
-        
-        const session = {
-            email,
-            role,
-            name: role === "admin" ? "Admin" : "User",
-            isLoggedIn: true,
-            loginTime: Date.now()
-        };
-        
-        console.log("SESSION WRITE:", session);
-        
-        localStorage.setItem("venturx_session", JSON.stringify(session));
-        
-        if (window.Auth) {
-            window.Auth.login(session);
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+
+                // Store authenticated session
+                localStorage.setItem(
+                    "venturx_session",
+                    JSON.stringify(data.user)
+                );
+
+                console.log("LOGIN SUCCESS:", data.user);
+
+                // Redirect based on role
+                if (data.user.role === "admin") {
+
+                    console.log("Redirecting Admin...");
+
+                    window.location.hash = "#/admin";
+
+                } else {
+
+                    console.log("Redirecting User Dashboard...");
+
+                    window.location.hash = "#/dashboard";
+                }
+
+            } else {
+
+                alert("Invalid email or password");
+            }
+        } catch (error) {
+            console.error("Login Error:", error);
+            alert("Server Error");
+        } finally {
+            loginInProgress = false;
         }
-        
-        window.location.hash = role === "admin" ? "#/admin" : "#/dashboard";
     });
 };

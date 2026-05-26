@@ -16,11 +16,182 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from bson.objectid import ObjectId
+from bson import ObjectId
+import bcrypt
+
+from db import (
+    users_collection,
+    subscriptions_collection,
+    analytics_collection,
+    campaigns_collection,
+    forecasts_collection,
+    recommendations_collection,
+    reports_collection,
+    settings_collection,
+    activity_logs_collection
+)
 
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
-CORS(app)
+CORS(
+    app,
+    resources={r"/*": {"origins": "http://localhost:3000"}},
+    supports_credentials=True
+)
+
+# ─────────────────────────────────────
+# TEST MONGODB ROUTE
+# ─────────────────────────────────────
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+
+    data = request.json
+
+    email = data.get("email")
+
+    existing_user = users_collection.find_one({
+        "email": email
+    })
+
+    if existing_user:
+
+        return jsonify({
+            "success": False,
+            "message": "Email already exists"
+        })
+
+    hashed_password = bcrypt.hashpw(
+        data.get("password").encode('utf-8'),
+        bcrypt.gensalt()
+    )
+
+    new_user = {
+        "name": data.get("name"),
+        "email": data.get("email"),
+        "company": data.get("company"),
+        "industry": data.get("industry"),
+        "team_size": data.get("team_size"),
+        "password": hashed_password.decode('utf-8'),
+
+        "plan": "Starter",
+        "status": "Active",
+        "revenue": 0,
+        "ai_engagement": 84,
+        "churn_risk": "Low"
+    }
+
+    result = users_collection.insert_one(new_user)
+
+    new_user["_id"] = str(result.inserted_id)
+
+    del new_user["password"]
+
+    return jsonify({
+        "success": True,
+        "message": "Signup successful",
+        "user": new_user
+    })
+
+@app.route('/api/login', methods=['POST', 'OPTIONS'])
+def login():
+
+    data = request.json
+
+    email = data.get("email")
+    password = data.get("password")
+
+    user = users_collection.find_one({
+        "email": email
+    })
+
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "User not found"
+        }), 401
+
+    stored_password = user.get("password", "")
+
+    if not bcrypt.checkpw(
+        password.encode('utf-8'),
+        stored_password.encode('utf-8')
+    ):
+        return jsonify({
+            "success": False,
+            "message": "Invalid password"
+        }), 401
+
+    return jsonify({
+        "success": True,
+        "user": {
+            "name": user.get("name"),
+            "email": user.get("email"),
+            "company": user.get("company"),
+            "role": user.get("role", "user")
+        }
+    })
+
+@app.route('/test')
+def test():
+
+    users_collection.insert_one({
+        "name": "VenturX Test User",
+        "role": "admin"
+    })
+
+    return jsonify({
+        "success": True,
+        "message": "MongoDB Connected Successfully"
+    })
+
+@app.route('/api/users', methods=['POST'])
+def create_user():
+
+    data = request.json
+
+    user = {
+        "name": data.get("name"),
+        "email": data.get("email"),
+        "company": data.get("company"),
+        "plan": data.get("plan"),
+        "revenue": data.get("revenue"),
+        "ai_engagement": data.get("ai_engagement"),
+        "churn_risk": data.get("churn_risk"),
+        "status": data.get("status")
+    }
+
+    result = users_collection.insert_one(user)
+
+    return jsonify({
+        "success": True,
+        "inserted_id": str(result.inserted_id)
+    })
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+
+    users = list(users_collection.find())
+
+    for user in users:
+        user["_id"] = str(user["_id"])
+
+    return jsonify(users)
+
+
+@app.route('/api/users/<id>', methods=['DELETE'])
+def delete_user(id):
+
+    users_collection.delete_one({
+        "_id": ObjectId(id)
+    })
+
+    return jsonify({
+        "success": True
+    })
+
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 BASE = os.path.dirname(os.path.abspath(__file__))
