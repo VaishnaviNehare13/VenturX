@@ -258,43 +258,84 @@ window.switchChartTab = function(type, element) {
     premiumMainChart.update();
 };
 
+
+async function saveUserAnalytics() {
+    try {
+        const sessionStr = localStorage.getItem("venturx_session");
+        if (!sessionStr) return;
+        const user = JSON.parse(sessionStr);
+        if (!user || !user.email) return;
+
+        // Scrape current UI values
+        const revEl = document.querySelector('#kpi-detail-revenue')?.previousElementSibling?.querySelector('.anim-counter');
+        const subsEl = document.querySelector('#kpi-detail-subs')?.previousElementSibling?.querySelector('.anim-counter');
+        const aiEl = document.querySelector('#kpi-detail-ai')?.previousElementSibling?.querySelector('.anim-counter');
+        const roiEl = document.querySelector('#kpi-detail-roi')?.previousElementSibling?.querySelector('.anim-counter');
+        
+        const payload = {
+            user_email: user.email,
+            workspace: "VenturX Workspace",
+            total_revenue: revEl ? parseFloat(revEl.getAttribute('data-target')) : 0,
+            active_subscriptions: subsEl ? parseFloat(subsEl.getAttribute('data-target')) : 0,
+            ai_confidence: aiEl ? parseFloat(aiEl.getAttribute('data-target')) : 0,
+            marketing_roi: roiEl ? parseFloat(roiEl.getAttribute('data-target')) : 0,
+            retention_rate: 94.5,
+            prediction_score: 88,
+            growth_chart: chartDatasets.growth.data,
+            client_growth: chartDatasets.clients.data,
+            ai_insights: ["Dashboard synced successfully."]
+        };
+
+        const response = await fetch('http://127.0.0.1:5000/api/user_analytics/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        const res = await response.json();
+        console.log("Auto-Save User Analytics:", res);
+    } catch (e) {
+        console.error("Auto-Save User Analytics Error:", e);
+    }
+}
+
 async function loadLiveAnalytics() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/analytics");
+        const sessionStr = localStorage.getItem("venturx_session");
+        if (!sessionStr) return;
+        const user = JSON.parse(sessionStr);
+        if (!user || !user.email) return;
+
+        const response = await fetch(`http://127.0.0.1:5000/api/user_analytics/${user.email}`);
         if (!response.ok) throw new Error("Analytics API error");
         const json = await response.json();
         
         if (json.success && json.data) {
-            console.log("Live Analytics Loaded", json.data);
+            console.log("User Analytics Loaded", json.data);
             const data = json.data;
             
-            // Update Data Targets for animations
-            const revEl = document.querySelector('#kpi-detail-revenue').previousElementSibling.querySelector('.anim-counter');
-            if (revEl) revEl.setAttribute('data-target', data.revenue || 1245600);
-            
-            const subsEl = document.querySelector('#kpi-detail-subs').previousElementSibling.querySelector('.anim-counter');
-            if (subsEl) subsEl.setAttribute('data-target', data.subscriptions || 124);
-            
-            const aiEl = document.querySelector('#kpi-detail-ai').previousElementSibling.querySelector('.anim-counter');
-            if (aiEl) aiEl.setAttribute('data-target', data.ai_confidence || 94);
-            
-            const roiEl = document.querySelector('#kpi-detail-roi').previousElementSibling.querySelector('.anim-counter');
-            if (roiEl) roiEl.setAttribute('data-target', data.marketing_roi || 3.2);
+            const revEl = document.querySelector('#kpi-detail-revenue')?.previousElementSibling?.querySelector('.anim-counter');
+        const subsEl = document.querySelector('#kpi-detail-subs')?.previousElementSibling?.querySelector('.anim-counter');
+        const aiEl = document.querySelector('#kpi-detail-ai')?.previousElementSibling?.querySelector('.anim-counter');
+        const roiEl = document.querySelector('#kpi-detail-roi')?.previousElementSibling?.querySelector('.anim-counter');
+            if (roiEl) roiEl.setAttribute('data-target', data.marketing_roi);
 
-            // Update KPI Detail Texts (Retention/Churn)
             const retentionSpan = document.querySelector('#kpi-detail-subs div:nth-child(2) span:nth-child(2)');
-            if (retentionSpan) retentionSpan.innerText = (data.retention_rate || 94.5) + '%';
+            if (retentionSpan) retentionSpan.innerText = (data.retention_rate) + '%';
             
             const churnSpan = document.querySelector('#kpi-detail-subs div:nth-child(1) span:nth-child(2)');
-            if (churnSpan) churnSpan.innerText = (data.churn_rate || 1.2) + '% (Healthy)';
+            if (churnSpan) churnSpan.innerText = (100 - data.retention_rate).toFixed(1) + '% (Healthy)';
             
-            // Overwrite Growth History
-            if (data.growth_history && Array.isArray(data.growth_history)) {
-                chartDatasets.growth.data = data.growth_history;
+            if (data.growth_chart && Array.isArray(data.growth_chart)) {
+                chartDatasets.growth.data = data.growth_chart;
+            }
+            if (data.client_growth && Array.isArray(data.client_growth)) {
+                chartDatasets.clients.data = data.client_growth;
             }
         }
     } catch (e) {
-        console.error("Failed to load live analytics, using fallback:", e);
+        console.error("Failed to load user analytics:", e);
     }
     
     requestAnimationFrame(() => {
@@ -303,8 +344,10 @@ async function loadLiveAnalytics() {
 
     setTimeout(() => {
         renderPremiumChart();
+        saveUserAnalytics();
     }, 200);
 }
+
 
 
 async function loadDashboard() {
@@ -439,6 +482,7 @@ function renderDashboard() {
     setTimeout(() => {
         try {
             renderPremiumChart();
+        saveUserAnalytics();
             console.log("Dashboard Render Complete");
         } catch (e) {
             console.error("Premium chart rendering failed:", e);

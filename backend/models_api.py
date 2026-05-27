@@ -37,7 +37,8 @@ from db import (
     crm_collection,
     segmentation_collection,
     contenthub_collection,
-    branding_collection
+    branding_collection,
+    financials_collection
 )
 
 warnings.filterwarnings("ignore")
@@ -1154,59 +1155,74 @@ def segmentation():
 # ══════════════════════════════════════════════════════════════════════════════
 @app.route("/api/forecast/sales", methods=['GET', 'POST', 'OPTIONS'])
 def sales_forecast():
-    """
-    Returns 90-day sales forecast.
-    Uses a simple linear trend when Prophet is not installed.
-    """
-    periods = int(request.args.get("periods", 90))
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
 
-    # Try Prophet
     try:
-        from prophet import Prophet
-        mkt = load_csv("mkt_campaign2", data_path("customer_segmentation", "marketing_campaign.csv"), sep="\t")
-        if mkt is not None:
-            mkt["Dt_Customer"] = pd.to_datetime(mkt["Dt_Customer"], dayfirst=True, errors="coerce")
-            mkt = mkt.dropna(subset=["Dt_Customer"])
-            mnt_cols = [c for c in mkt.columns if c.lower().startswith("mnt")]
-            mkt["sales"] = mkt[mnt_cols].sum(axis=1)
-            daily = mkt.groupby(mkt["Dt_Customer"].dt.date)["sales"].sum().reset_index()
-            daily.columns = ["ds", "y"]
-            daily["ds"] = pd.to_datetime(daily["ds"])
-            if len(daily) >= 10:
-                m = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=False)
-                m.fit(daily)
-                future = m.make_future_dataframe(periods=periods)
-                fc = m.predict(future)
-                result = fc[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(periods)
-                return jsonify({
-                    "forecast": [
-                        {"date": str(r["ds"])[:10], "predicted": round(r["yhat"], 2),
-                         "lower": round(r["yhat_lower"], 2), "upper": round(r["yhat_upper"], 2)}
-                        for _, r in result.iterrows()
-                    ],
-                    "model": "Prophet",
-                    "periods": periods
-                })
-    except Exception as e:
-        print(f"[INFO] Prophet unavailable ({e}), using linear fallback")
+        periods = int(request.args.get("periods", 90))
+        
+        # Try Prophet
+        try:
+            from prophet import Prophet
+            mkt = load_csv("mkt_campaign2", data_path("customer_segmentation", "marketing_campaign.csv"), sep="	")
+            if mkt is not None:
+                mkt["Dt_Customer"] = pd.to_datetime(mkt["Dt_Customer"], dayfirst=True, errors="coerce")
+                mkt = mkt.dropna(subset=["Dt_Customer"])
+                mnt_cols = [col for col in mkt.columns if col.lower().startswith("mnt")]
+                mkt["sales"] = mkt[mnt_cols].sum(axis=1)
+                daily = mkt.groupby(mkt["Dt_Customer"].dt.date)["sales"].sum().reset_index()
+                daily.columns = ["ds", "y"]
+                daily["ds"] = pd.to_datetime(daily["ds"])
+                
+                if len(daily) >= 10:
+                    m = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=False)
+                    m.fit(daily)
+                    future = m.make_future_dataframe(periods=periods)
+                    fc = m.predict(future)
+                    result = fc[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(periods)
+                    return jsonify({
+                        "success": True,
+                        "forecast": [
+                            {"date": str(r["ds"])[:10], "predicted": round(r["yhat"], 2),
+                             "lower": round(r["yhat_lower"], 2), "upper": round(r["yhat_upper"], 2)}
+                            for _, r in result.iterrows()
+                        ],
+                        "model": "Prophet",
+                        "periods": periods
+                    })
+        except Exception as e:
+            print(f"[INFO] Prophet unavailable ({e}), using linear fallback")
 
-    # Linear fallback
-    base = 6_800_000
-    trend = 15_000
-    import datetime
-    today = datetime.date.today()
-    forecast = []
-    for i in range(periods):
-        d = today + datetime.timedelta(days=i)
-        noise = np.random.normal(0, 80_000)
-        val = base + trend * i + noise
-        forecast.append({
-            "date": str(d),
-            "predicted": round(val, 2),
-            "lower":     round(val * 0.96, 2),
-            "upper":     round(val * 1.04, 2),
+        # Linear fallback
+        base = 6_800_000
+        trend = 15_000
+        import datetime
+        import numpy as np
+        today = datetime.date.today()
+        forecast = []
+        for i in range(periods):
+            d = today + datetime.timedelta(days=i)
+            noise = np.random.normal(0, 80_000)
+            val = base + trend * i + noise
+            forecast.append({
+                "date": str(d),
+                "predicted": round(val, 2),
+                "lower":     round(val * 0.96, 2),
+                "upper":     round(val * 1.04, 2),
+            })
+        return jsonify({
+            "success": True, 
+            "forecast": forecast, 
+            "model": "LinearTrend", 
+            "periods": periods
         })
-    return jsonify({"forecast": forecast, "model": "LinearTrend", "periods": periods})
+        
+    except Exception as e:
+        print("SALES FORECAST ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1424,36 +1440,46 @@ def campaign_batch():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 04 – Financial Forecasting
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/forecast/profit", methods=['POST', 'GET', 'OPTIONS'])
-def profit_forecast():
-    """
-    Predicts startup profit.
-    Body JSON: { rd_spend, administration, marketing_spend, state }
-    """
-    model = load_pkl("financial_model", model_path("forecasting", "financial_model.pkl"))
-    data  = request.get_json(force=True) or {}
+@app.route('/api/forecast/profit', methods=['POST', 'OPTIONS'])
+def predict_profit():
 
-    state_map = {"california": 0, "florida": 1, "new york": 2}
-    state_enc = state_map.get(str(data.get("state", "new york")).lower(), 2)
+    print("FORECAST PROFIT ROUTE HIT")
 
-    rd    = float(data.get("rd_spend", 100000))
-    admin = float(data.get("administration", 120000))
-    mkt   = float(data.get("marketing_spend", 300000))
+    if request.method == 'OPTIONS':
 
-    # Include unnamed:0 column (index) as model was trained with it
-    X = np.array([[0, rd, admin, mkt, state_enc]])
+        return jsonify({
+            "success": True
+        }), 200
 
-    if model is not None:
-        try:
-            pred = float(model.predict(X)[0])
-            return jsonify({"predicted_profit": round(pred, 2), "model": "RandomForestRegressor",
-                            "r2_score": 0.978})
-        except Exception as e:
-            print(f"[WARN] Financial model error: {e}")
+    try:
 
-    # Fallback linear approximation
-    pred = 0.85 * rd + 0.05 * mkt - 0.1 * admin + 5000
-    return jsonify({"predicted_profit": round(pred, 2), "model": "LinearApprox", "r2_score": 0.92})
+        data = request.get_json()
+
+        print("FORECAST PAYLOAD:", data)
+
+        rd_spend = float(data.get("rd_spend", 0))
+        administration_cost = float(data.get("administration_cost", 0))
+        marketing_spend = float(data.get("marketing_spend", 0))
+
+        predicted_profit = (
+            rd_spend * 0.8
+            + marketing_spend * 0.25
+            - administration_cost * 0.15
+        )
+
+        return jsonify({
+            "success": True,
+            "predicted_profit": round(predicted_profit, 2)
+        })
+
+    except Exception as e:
+
+        print("FORECAST ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 @app.route("/api/forecast/profit/scenarios", methods=['GET', 'POST', 'OPTIONS'])
@@ -2109,7 +2135,222 @@ def save_branding():
             "error": str(e)
         }), 500
 
+
+@app.route('/api/financials/save', methods=['POST', 'OPTIONS'])
+def save_financials():
+
+    print("FINANCIALS SAVE ROUTE HIT")
+
+    if request.method == 'OPTIONS':
+        return jsonify({
+            "success": True
+        }), 200
+
+    try:
+
+        data = request.get_json()
+
+        print("FINANCIALS DATA:", data)
+
+        financial_doc = {
+
+            "user_email": data.get("user_email"),
+
+            "total_revenue": data.get("total_revenue"),
+            "mrr": data.get("mrr"),
+            "total_expenses": data.get("total_expenses"),
+            "net_profit": data.get("net_profit"),
+            "burn_rate": data.get("burn_rate"),
+            "investor_readiness": data.get("investor_readiness"),
+
+            "rd_spend": data.get("rd_spend"),
+            "administration_cost": data.get("administration_cost"),
+            "marketing_spend": data.get("marketing_spend"),
+
+            "predicted_profit": data.get("predicted_profit"),
+
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        inserted = financials_collection.insert_one(financial_doc)
+
+        print("FINANCIAL INSERTED:", inserted.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "inserted_id": str(inserted.inserted_id)
+        })
+
+    except Exception as e:
+
+        print("FINANCIAL SAVE ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/user_analytics/<email>', methods=['GET'])
+def get_user_analytics(email):
+    try:
+        from datetime import datetime
+        doc = user_analytics_collection.find_one({"user_email": email})
+        
+        if not doc:
+            doc = {
+                "user_email": email,
+                "workspace": "VenturX Workspace",
+                "total_revenue": 1250000,
+                "active_subscriptions": 150,
+                "ai_confidence": 92,
+                "marketing_roi": 12.5,
+                "retention_rate": 95,
+                "prediction_score": 88,
+                "growth_chart": [10, 20, 35, 55, 80, 100],
+                "client_growth": [5, 10, 25, 40, 60, 85],
+                "ai_insights": ["Strong growth trajectory detected."],
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            user_analytics_collection.insert_one(doc.copy())
+            
+        if "_id" in doc:
+            doc["_id"] = str(doc["_id"])
+            
+        return jsonify({
+            "success": True,
+            "data": doc
+        })
+    except Exception as e:
+        print("GET USER ANALYTICS ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/user_analytics/save', methods=['POST', 'OPTIONS'])
+def save_user_analytics():
+    print("USER ANALYTICS SAVE ROUTE HIT")
+    
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        from datetime import datetime
+        data = request.get_json()
+        print("USER ANALYTICS PAYLOAD:", data)
+        
+        user_email = data.get("user_email")
+        if not user_email:
+            return jsonify({"success": False, "message": "user_email is required"}), 400
+            
+        payload = {
+            "user_email": user_email,
+            "workspace": data.get("workspace", "VenturX Workspace"),
+            "total_revenue": data.get("total_revenue", 0),
+            "active_subscriptions": data.get("active_subscriptions", 0),
+            "ai_confidence": data.get("ai_confidence", 0),
+            "marketing_roi": data.get("marketing_roi", 0),
+            "retention_rate": data.get("retention_rate", 0),
+            "prediction_score": data.get("prediction_score", 0),
+            "growth_chart": data.get("growth_chart", []),
+            "client_growth": data.get("client_growth", []),
+            "ai_insights": data.get("ai_insights", []),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        user_analytics_collection.update_one(
+            {"user_email": user_email},
+            {"$set": payload},
+            upsert=True
+        )
+        
+        print("USER ANALYTICS SAVED")
+        return jsonify({
+            "success": True,
+            "message": "User analytics saved successfully"
+        })
+        
+    except Exception as e:
+        print("USER ANALYTICS SAVE ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/analytics/overview', methods=['GET'])
+def analytics_overview():
+    try:
+        # Aggregation logic
+        # 1. users
+        total_users = users_collection.count_documents({})
+        
+        # 2. startup_growth
+        # Just return active subscriptions from user_analytics or calculate percentage
+        # We will calculate average retention_rate from user_analytics
+        user_an_docs = list(user_analytics_collection.find({}))
+        
+        if user_an_docs:
+            customer_retention = sum(d.get("retention_rate", 0) for d in user_an_docs) / len(user_an_docs)
+            ai_tool_usage = sum(d.get("ai_confidence", 0) for d in user_an_docs) # approximate usage proxy
+            revenue_growth = sum(d.get("total_revenue", 0) for d in user_an_docs)
+            startup_growth = sum(d.get("active_subscriptions", 0) for d in user_an_docs)
+        else:
+            customer_retention = 0
+            ai_tool_usage = 0
+            revenue_growth = 0
+            startup_growth = 0
+
+        # 3. campaigns_collection
+        camp_docs = list(campaigns_collection.find({}))
+        if camp_docs:
+            campaign_reach = sum(float(c.get("impressions", c.get("reach", 0))) for c in camp_docs)
+        else:
+            campaign_reach = 0
+            
+        # 4. financials_collection
+        fin_docs = list(financials_collection.find({}))
+        if fin_docs:
+            # Add financials revenue if available
+            revenue_growth += sum(float(f.get("total_revenue", 0)) for f in fin_docs)
+
+        # 5. crm_collection
+        crm_docs = list(crm_collection.find({}))
+        if crm_docs:
+            # Overwrite total_users if CRM is heavily populated, or combine
+            total_users += len(crm_docs)
+            
+        return jsonify({
+            "success": True,
+            "data": {
+                "total_users": total_users,
+                "startup_growth": startup_growth,
+                "ai_tool_usage": ai_tool_usage,
+                "customer_retention": round(customer_retention, 2),
+                "campaign_reach": campaign_reach,
+                "revenue_growth": revenue_growth
+            }
+        })
+    except Exception as e:
+        print("ANALYTICS OVERVIEW ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "data": {
+                "total_users": 0,
+                "startup_growth": 0,
+                "ai_tool_usage": 0,
+                "customer_retention": 0,
+                "campaign_reach": 0,
+                "revenue_growth": 0
+            }
+        }), 500
+
 if __name__ == '__main__':
+
+
+
 
 
 

@@ -19,4 +19,5 @@ crm_collection = db["crm"]
 segmentation_collection = db["Segmentations"]
 contenthub_collection = db["contenthub"]
 branding_collection = db["branding"]
+financials_collection = db["financials"]
 print("MongoDB Connected Successfully")

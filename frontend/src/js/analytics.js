@@ -77,37 +77,55 @@ function getChartColors() {
 
 }
 
-function updateAnalyticsKPIs() {
- const crm = AnalyticsEngine.getCRMData();
- const mkt = AnalyticsEngine.getMarketingData();
- const engineForecasting = AnalyticsEngine.getForecastingData(); // We will handle async later
- 
- const scale = globalFilterDays / 30;
- 
- // Total Users
- const usersEl = document.getElementById('kpiTotalUsers');
- if (usersEl) usersEl.textContent = crm.totalUsers > 0 ? Math.round(crm.totalUsers * scale).toLocaleString('en-IN') : '0';
- 
- // Startup Growth
- const growthEl = document.getElementById('kpiStartupGrowth');
- if (growthEl) growthEl.textContent = Math.round(crm.activeUsers * scale).toLocaleString('en-IN');
- 
- // AI Usage
- const usageEl = document.getElementById('kpiAiUsage');
- if (usageEl) {
-  const totalAiActions = (crm.data.reduce((sum, c) => sum + (c.forecastsCreated||0) + (c.campaignsCreated||0), 0)) || 24;
-  usageEl.textContent = Math.round(totalAiActions * scale).toLocaleString('en-IN');
- }
+async function updateAnalyticsKPIs() {
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/analytics/overview');
+        const json = await response.json();
+        const data = json.success ? json.data : {
+            total_users: 0,
+            startup_growth: 0,
+            ai_tool_usage: 0,
+            customer_retention: 0,
+            campaign_reach: 0,
+            revenue_growth: 0
+        };
 
- // Retention (doesn't scale linearly, just shifts slightly)
- const retentionEl = document.getElementById('kpiRetention');
- if (retentionEl) retentionEl.textContent = crm.retention ? Math.min(100, (crm.retention + (scale > 1 ? -1.2 : 0.5))).toFixed(1) + '%' : '0%';
+        const scale = globalFilterDays / 30;
 
- // Campaign Reach
- const reachEl = document.getElementById('kpiReach');
- if (reachEl) reachEl.textContent = mkt.reach > 0 ? Math.round(mkt.reach * scale).toLocaleString('en-IN') : '0';
+        const usersEl = document.getElementById('kpiTotalUsers');
+        if (usersEl) usersEl.textContent = Math.round((data.total_users || 0) * scale).toLocaleString('en-IN');
+        
+        const growthEl = document.getElementById('kpiStartupGrowth');
+        if (growthEl) growthEl.textContent = Math.round((data.startup_growth || 0) * scale).toLocaleString('en-IN');
+        
+        const usageEl = document.getElementById('kpiAiUsage');
+        if (usageEl) usageEl.textContent = Math.round((data.ai_tool_usage || 0) * scale).toLocaleString('en-IN');
 
- // Revenue (We'll update this async if forecasting API works)
+        const retentionEl = document.getElementById('kpiRetention');
+        if (retentionEl) retentionEl.textContent = data.customer_retention ? (data.customer_retention).toFixed(1) + '%' : '0%';
+
+        const reachEl = document.getElementById('kpiReach');
+        if (reachEl) reachEl.textContent = Math.round((data.campaign_reach || 0) * scale).toLocaleString('en-IN');
+
+        const revEl = document.getElementById('kpiRevenue');
+        if (revEl) revEl.textContent = '₹' + Math.round((data.revenue_growth || 0) * scale).toLocaleString('en-IN');
+
+    } catch (error) {
+        console.error("Failed to load analytics overview:", error);
+        
+        const usersEl = document.getElementById('kpiTotalUsers');
+        if (usersEl) usersEl.textContent = '0';
+        const growthEl = document.getElementById('kpiStartupGrowth');
+        if (growthEl) growthEl.textContent = '0';
+        const usageEl = document.getElementById('kpiAiUsage');
+        if (usageEl) usageEl.textContent = '0';
+        const retentionEl = document.getElementById('kpiRetention');
+        if (retentionEl) retentionEl.textContent = '0%';
+        const reachEl = document.getElementById('kpiReach');
+        if (reachEl) reachEl.textContent = '0';
+        const revEl = document.getElementById('kpiRevenue');
+        if (revEl) revEl.textContent = '₹0';
+    }
 }
 
 function renderAIInsights() {
