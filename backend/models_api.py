@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from datetime import datetime
 from bson.objectid import ObjectId
 from bson import ObjectId
 import bcrypt
@@ -29,23 +30,29 @@ from db import (
     recommendations_collection,
     reports_collection,
     settings_collection,
-    activity_logs_collection
+    activity_logs_collection,
+    dashboard_collection
 )
 
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
+
 CORS(
     app,
-    resources={r"/*": {"origins": "http://localhost:3000"}},
+    resources={r"/api/*": {"origins": "*"}},
     supports_credentials=True
 )
+
+@app.route("/api/test", methods=["GET"])
+def api_test():
+    return jsonify({"status": "ok"})
 
 # ─────────────────────────────────────
 # TEST MONGODB ROUTE
 # ─────────────────────────────────────
 
-@app.route('/api/signup', methods=['POST'])
+@app.route('/api/signup', methods=['POST', 'GET', 'OPTIONS'])
 def signup():
 
     data = request.json
@@ -97,6 +104,11 @@ def signup():
 
 @app.route('/api/login', methods=['POST', 'OPTIONS'])
 def login():
+    print("LOGIN ROUTE HIT")
+    print("REQUEST METHOD:", request.method)
+
+    if request.method == "OPTIONS":
+        return jsonify({"success": True}), 200
 
     data = request.json
 
@@ -134,7 +146,7 @@ def login():
         }
     })
 
-@app.route('/test')
+@app.route('/test', methods=['GET', 'POST', 'OPTIONS'])
 def test():
 
     users_collection.insert_one({
@@ -147,7 +159,7 @@ def test():
         "message": "MongoDB Connected Successfully"
     })
 
-@app.route('/api/users', methods=['POST'])
+@app.route('/api/users', methods=['POST', 'OPTIONS'])
 def create_user():
 
     data = request.json
@@ -172,16 +184,28 @@ def create_user():
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
+    try:
+        users = list(users_collection.find({}, {
+            "password": 0
+        }))
 
-    users = list(users_collection.find())
+        for user in users:
+            user["_id"] = str(user["_id"])
 
-    for user in users:
-        user["_id"] = str(user["_id"])
+        print("USERS API HIT")
+        print("TOTAL USERS:", len(users))
 
-    return jsonify(users)
+        return jsonify(users), 200
+
+    except Exception as e:
+        print("USERS API ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
-@app.route('/api/users/<id>', methods=['DELETE'])
+@app.route('/api/users/<id>', methods=['DELETE', 'POST', 'GET', 'OPTIONS'])
 def delete_user(id):
 
     users_collection.delete_one({
@@ -192,6 +216,605 @@ def delete_user(id):
         "success": True
     })
 
+# ─────────────────────────────────────
+# SUBSCRIPTIONS API
+# ─────────────────────────────────────
+
+@app.route('/api/subscriptions', methods=['GET'])
+def get_subscriptions():
+    try:
+        # Check if collection is empty, insert demo data if so
+        if subscriptions_collection.count_documents({}) == 0:
+            demo_subs = [
+                {
+                    "company": "StudySmart AI",
+                    "owner": "Raghav Shastri",
+                    "plan": "Enterprise",
+                    "billing_cycle": "Monthly",
+                    "amount": 9999,
+                    "status": "Active",
+                    "renewal_date": "2026-08-15",
+                    "active_users": 84,
+                    "churn_risk": "Low"
+                },
+                {
+                    "company": "NeuralSync AI",
+                    "owner": "Sarah Chen",
+                    "plan": "Growth",
+                    "billing_cycle": "Annual",
+                    "amount": 4500,
+                    "status": "Active",
+                    "renewal_date": "2027-01-10",
+                    "active_users": 12,
+                    "churn_risk": "Medium"
+                },
+                {
+                    "company": "VenturX Enterprise",
+                    "owner": "Admin User",
+                    "plan": "Enterprise",
+                    "billing_cycle": "Monthly",
+                    "amount": 12000,
+                    "status": "Active",
+                    "renewal_date": "2026-06-30",
+                    "active_users": 150,
+                    "churn_risk": "Low"
+                }
+            ]
+            subscriptions_collection.insert_many(demo_subs)
+            print("Inserted demo subscriptions.")
+
+        subs = list(subscriptions_collection.find({}, {"password": 0}))
+        
+        for sub in subs:
+            sub["_id"] = str(sub["_id"])
+            
+        print("SUBSCRIPTIONS API HIT")
+        print("TOTAL SUBS:", len(subs))
+        
+        return jsonify(subs), 200
+        
+    except Exception as e:
+        print("SUBSCRIPTIONS API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/subscriptions', methods=['POST', 'OPTIONS'])
+def create_subscription():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        data = request.json or {}
+        
+        new_sub = {
+            "company": data.get("company", "Unknown Company"),
+            "owner": data.get("owner", "Unknown Owner"),
+            "plan": data.get("plan", "Starter"),
+            "billing_cycle": data.get("billing_cycle", "Monthly"),
+            "amount": float(data.get("amount", 999)),
+            "status": data.get("status", "Active"),
+            "renewal_date": data.get("renewal_date", "2027-01-01"),
+            "active_users": int(data.get("active_users", 1)),
+            "churn_risk": data.get("churn_risk", "Low")
+        }
+        
+        result = subscriptions_collection.insert_one(new_sub)
+        return jsonify({"success": True, "inserted_id": str(result.inserted_id)}), 201
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/subscriptions/<id>', methods=['DELETE', 'OPTIONS'])
+def delete_subscription(id):
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        subscriptions_collection.delete_one({"_id": ObjectId(id)})
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────
+# AI ANALYTICS API
+# ─────────────────────────────────────
+
+@app.route('/api/analytics', methods=['GET'])
+def get_analytics():
+    try:
+        # Check if collection is empty, insert demo data if so
+        if analytics_collection.count_documents({}) == 0:
+            demo_analytics = [
+                {
+                    "company": "StudySmart AI",
+                    "user_email": "founder@studysmart.ai",
+                    "ai_score": 84,
+                    "engagement_rate": 91,
+                    "growth_index": 18,
+                    "monthly_ai_requests": 42000,
+                    "predicted_churn": "Low",
+                    "retention_score": 94,
+                    "recommendation_accuracy": 89,
+                    "last_updated": "2026-05-27"
+                },
+                {
+                    "company": "NeuralSync AI",
+                    "user_email": "sarah@neuralsync.ai",
+                    "ai_score": 72,
+                    "engagement_rate": 65,
+                    "growth_index": 12,
+                    "monthly_ai_requests": 15000,
+                    "predicted_churn": "Medium",
+                    "retention_score": 68,
+                    "recommendation_accuracy": 75,
+                    "last_updated": "2026-05-27"
+                },
+                {
+                    "company": "VenturX Enterprise",
+                    "user_email": "admin@venturx.com",
+                    "ai_score": 98,
+                    "engagement_rate": 99,
+                    "growth_index": 35,
+                    "monthly_ai_requests": 120000,
+                    "predicted_churn": "Low",
+                    "retention_score": 98,
+                    "recommendation_accuracy": 95,
+                    "last_updated": "2026-05-27"
+                }
+            ]
+            analytics_collection.insert_many(demo_analytics)
+            print("Inserted demo AI analytics.")
+
+        analytics_data = list(analytics_collection.find({}))
+        
+        for record in analytics_data:
+            record["_id"] = str(record["_id"])
+            
+        print("ANALYTICS API HIT")
+        print("TOTAL ANALYTICS RECORDS:", len(analytics_data))
+        
+        return jsonify(analytics_data), 200
+        
+    except Exception as e:
+        print("ANALYTICS API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/analytics', methods=['POST', 'OPTIONS'])
+def create_analytics():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        data = request.json or {}
+        
+        new_record = {
+            "company": data.get("company", "Unknown Company"),
+            "user_email": data.get("user_email", "unknown@company.com"),
+            "ai_score": int(data.get("ai_score", 50)),
+            "engagement_rate": int(data.get("engagement_rate", 50)),
+            "growth_index": int(data.get("growth_index", 5)),
+            "monthly_ai_requests": int(data.get("monthly_ai_requests", 1000)),
+            "predicted_churn": data.get("predicted_churn", "Medium"),
+            "retention_score": int(data.get("retention_score", 50)),
+            "recommendation_accuracy": int(data.get("recommendation_accuracy", 50)),
+            "last_updated": data.get("last_updated", "2026-05-27")
+        }
+        
+        result = analytics_collection.insert_one(new_record)
+        return jsonify({"success": True, "inserted_id": str(result.inserted_id)}), 201
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/analytics/<id>', methods=['DELETE', 'OPTIONS'])
+def delete_analytics(id):
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        analytics_collection.delete_one({"_id": ObjectId(id)})
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ─────────────────────────────────────
+# RECOMMENDATIONS API
+# ─────────────────────────────────────
+
+@app.route('/api/recommendations', methods=['GET', 'OPTIONS'])
+def get_recommendations():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        # Check if collection is empty, insert demo data if so
+        if recommendations_collection.count_documents({}) == 0:
+            demo_recommendations = [
+                {
+                    "company": "Soylent",
+                    "category": "CRM",
+                    "recommendation": "Lead score threshold reached. Initiate outreach.",
+                    "ai_confidence": 92,
+                    "priority": "High",
+                    "impact": 15000,
+                    "status": "Accepted",
+                    "generated_at": "2026-05-27T10:00:00Z"
+                },
+                {
+                    "company": "Acme Corp",
+                    "category": "Marketing",
+                    "recommendation": "Suggested email campaign generated for churn prevention.",
+                    "ai_confidence": 88,
+                    "priority": "Medium",
+                    "impact": 5000,
+                    "status": "Pending",
+                    "generated_at": "2026-05-27T11:30:00Z"
+                },
+                {
+                    "company": "Globex",
+                    "category": "Financial",
+                    "recommendation": "Detected subscription anomaly. Pricing optimization needed.",
+                    "ai_confidence": 96,
+                    "priority": "High",
+                    "impact": 25000,
+                    "status": "Ignored",
+                    "generated_at": "2026-05-27T12:45:00Z"
+                },
+                {
+                    "company": "Initech",
+                    "category": "Engagement",
+                    "recommendation": "A/B Test optimization for AI engagement improvement.",
+                    "ai_confidence": 84,
+                    "priority": "Medium",
+                    "impact": 8000,
+                    "status": "Pending",
+                    "generated_at": "2026-05-27T14:15:00Z"
+                }
+            ]
+            recommendations_collection.insert_many(demo_recommendations)
+            print("Inserted demo AI recommendations.")
+
+        recommendations_data = list(recommendations_collection.find({}))
+        
+        for record in recommendations_data:
+            record["_id"] = str(record["_id"])
+            
+        print("RECOMMENDATIONS API HIT")
+        print("TOTAL RECOMMENDATIONS:", len(recommendations_data))
+        
+        return jsonify(recommendations_data), 200
+        
+    except Exception as e:
+        print("RECOMMENDATIONS API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ─────────────────────────────────────
+# PLATFORM HEALTH API
+# ─────────────────────────────────────
+
+@app.route('/api/platform-health', methods=['GET', 'OPTIONS'])
+def get_platform_health():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        # 1. Bootstrapping Logs
+        if activity_logs_collection.count_documents({}) == 0:
+            demo_logs = [
+                {"type": "SYS", "message": "Gateway Active and Routing", "timestamp": "2026-05-27T01:00:00Z"},
+                {"type": "DB", "message": "Executing vacuum on accounts table... OK", "timestamp": "2026-05-27T01:01:00Z"},
+                {"type": "AI", "message": "Loaded generic embedding model... OK", "timestamp": "2026-05-27T01:02:00Z"},
+                {"type": "SEC", "message": "Token rotation successful.", "timestamp": "2026-05-27T01:03:00Z"},
+                {"type": "ROUTE", "message": "/api/v1/workspaces - 200 OK (24ms)", "timestamp": "2026-05-27T01:04:00Z"},
+                {"type": "AI", "message": "Queue flushed. 0 pending jobs.", "timestamp": "2026-05-27T01:05:00Z"},
+                {"type": "SYS", "message": "Memory footprint stable at 42%.", "timestamp": "2026-05-27T01:06:00Z"},
+                {"type": "WARN", "message": "High load detected on redis cluster 2.", "timestamp": "2026-05-27T01:07:00Z"},
+                {"type": "SYS", "message": "Autoscaling initiated...", "timestamp": "2026-05-27T01:08:00Z"},
+                {"type": "SYS", "message": "Load balanced successfully.", "timestamp": "2026-05-27T01:09:00Z"},
+                {"type": "ROUTE", "message": "/api/v1/auth - 200 OK (18ms)", "timestamp": "2026-05-27T01:10:00Z"},
+                {"type": "AI", "message": "Received batch processing request...", "timestamp": "2026-05-27T01:11:00Z"}
+            ]
+            activity_logs_collection.insert_many(demo_logs)
+            print("Inserted demo platform logs.")
+
+        # 2. Aggregations
+        total_users = users_collection.count_documents({})
+        total_analytics = analytics_collection.count_documents({})
+        recent_logs = list(activity_logs_collection.find({}, {"_id": 0}).sort("timestamp", -1).limit(20))
+        
+        # Calculate simulated/dynamic metrics
+        active_sessions = 12042 + (total_users * 2) 
+        req_per_min = 4500 + (total_analytics * 10)
+        
+        payload = {
+            "system_status": "Operational",
+            "mongodb_status": "Connected",
+            "api_latency": "12ms",
+            "active_sessions": active_sessions,
+            "total_users": total_users,
+            "ai_engine_status": "Normal",
+            "requests_per_minute": req_per_min,
+            "cpu_usage": 68,
+            "memory_usage": 42,
+            "error_rate": 0.05,
+            "uptime": "99.99%",
+            "last_backup": "2026-05-27T00:00:00Z",
+            "logs": recent_logs[::-1] # Reverse to show oldest first in terminal
+        }
+        
+        print("PLATFORM HEALTH API HIT")
+        return jsonify(payload), 200
+        
+    except Exception as e:
+        print("PLATFORM HEALTH API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ─────────────────────────────────────
+# REPORTS API
+# ─────────────────────────────────────
+
+@app.route('/api/reports', methods=['GET', 'POST', 'OPTIONS'])
+def manage_reports():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        if request.method == 'GET':
+            # Auto-Bootstrap Demo Reports
+            if reports_collection.count_documents({}) == 0:
+                demo_reports = [
+                    {
+                        "title": "Monthly Revenue Summary",
+                        "category": "Platform Revenue",
+                        "generated_by": "System Agent",
+                        "generated_at": "2026-05-27T00:00:00Z",
+                        "status": "Completed",
+                        "format": "PDF",
+                        "total_users": 520,
+                        "revenue": 145000,
+                        "ai_score": 92,
+                        "insights": "MRR increased by 14% this month.",
+                        "download_count": 42
+                    },
+                    {
+                        "title": "AI Engagement Analysis",
+                        "category": "AI Usage Telemetry",
+                        "generated_by": "AI Analyst",
+                        "generated_at": "2026-05-26T14:30:00Z",
+                        "status": "Completed",
+                        "format": "JSON",
+                        "total_users": 480,
+                        "revenue": 0,
+                        "ai_score": 88,
+                        "insights": "Generative model usage peaked during EU business hours.",
+                        "download_count": 12
+                    },
+                    {
+                        "title": "Subscription Growth Report",
+                        "category": "Platform Revenue",
+                        "generated_by": "Finance Module",
+                        "generated_at": "2026-05-25T09:15:00Z",
+                        "status": "Completed",
+                        "format": "CSV",
+                        "total_users": 520,
+                        "revenue": 0,
+                        "ai_score": 95,
+                        "insights": "Pro tier conversions are up 8% week-over-week.",
+                        "download_count": 89
+                    },
+                    {
+                        "title": "Churn Risk Intelligence",
+                        "category": "Global User Audit",
+                        "generated_by": "Retention AI",
+                        "generated_at": "2026-05-27T08:00:00Z",
+                        "status": "Processing",
+                        "format": "CSV",
+                        "total_users": 35,
+                        "revenue": -12000,
+                        "ai_score": 98,
+                        "insights": "High risk identified in accounts dormant for 14+ days.",
+                        "download_count": 0
+                    },
+                    {
+                        "title": "Platform Health Audit",
+                        "category": "System Diagnostics",
+                        "generated_by": "System Admin",
+                        "generated_at": "2026-05-27T09:00:00Z",
+                        "status": "Queued",
+                        "format": "PDF",
+                        "total_users": 0,
+                        "revenue": 0,
+                        "ai_score": 100,
+                        "insights": "Pending generation...",
+                        "download_count": 0
+                    }
+                ]
+                reports_collection.insert_many(demo_reports)
+                print("Inserted demo reports.")
+
+            reports = list(reports_collection.find({}).sort("generated_at", -1))
+            for r in reports:
+                r["_id"] = str(r["_id"])
+            return jsonify(reports), 200
+
+        elif request.method == 'POST':
+            data = request.json
+            new_report = {
+                "title": data.get("title", "Custom Report"),
+                "category": data.get("category", "Custom"),
+                "generated_by": data.get("generated_by", "Admin"),
+                "generated_at": datetime.utcnow().isoformat() + "Z",
+                "status": "Processing",
+                "format": data.get("format", "PDF"),
+                "total_users": data.get("total_users", 0),
+                "revenue": data.get("revenue", 0),
+                "ai_score": data.get("ai_score", 0),
+                "insights": data.get("insights", "Generating insights..."),
+                "download_count": 0
+            }
+            result = reports_collection.insert_one(new_report)
+            new_report["_id"] = str(result.inserted_id)
+            return jsonify({"success": True, "report": new_report}), 201
+
+    except Exception as e:
+        print("REPORTS API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/reports/<report_id>', methods=['DELETE', 'OPTIONS'])
+def delete_report(report_id):
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        from bson.objectid import ObjectId
+        result = reports_collection.delete_one({"_id": ObjectId(report_id)})
+        if result.deleted_count > 0:
+            return jsonify({"success": True}), 200
+        else:
+            return jsonify({"success": False, "error": "Report not found"}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ─────────────────────────────────────
+# SETTINGS API
+# ─────────────────────────────────────
+
+@app.route('/api/settings', methods=['GET', 'POST', 'OPTIONS'])
+def manage_settings():
+    import datetime
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        if request.method == 'GET':
+            # Auto-Bootstrap Demo Settings
+            if settings_collection.count_documents({}) == 0:
+                demo_settings = {
+                    "platform_name": "VenturX OS",
+                    "maintenance_mode": False,
+                    "ai_engine_enabled": True,
+                    "dark_mode": True,
+                    "session_timeout": 30,
+                    "api_rate_limit": 1000,
+                    "email_alerts": True,
+                    "backup_frequency": "Daily",
+                    "audit_logging": True,
+                    "ai_confidence_threshold": 85,
+                    "updated_at": datetime.datetime.utcnow().isoformat() + "Z"
+                }
+                settings_collection.insert_one(demo_settings)
+                print("Inserted demo settings.")
+
+            setting = settings_collection.find_one({})
+            if setting:
+                setting["_id"] = str(setting["_id"])
+            return jsonify(setting), 200
+
+        elif request.method == 'POST':
+            data = request.json
+            data["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
+            
+            # Check if settings document exists
+            setting = settings_collection.find_one({})
+            print("Incoming Settings Payload:", data)
+            data.pop('_id', None) # Remove _id to prevent MongoDB error
+
+            if setting:
+                # Update existing
+                from bson.objectid import ObjectId
+                result = settings_collection.update_one({"_id": setting["_id"]}, {"$set": data})
+                print("Settings Updated:", result.modified_count)
+                updated = settings_collection.find_one({"_id": setting["_id"]})
+                updated["_id"] = str(updated["_id"])
+                return jsonify({"success": True, "message": "Settings updated", "settings": updated}), 200
+            else:
+                # Insert new if it somehow doesn't exist
+                result = settings_collection.insert_one(data)
+                data["_id"] = str(result.inserted_id)
+                return jsonify({"success": True, "message": "Settings created", "settings": data}), 201
+
+    except Exception as e:
+        print("SETTINGS API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/settings/<setting_id>', methods=['PUT', 'OPTIONS'])
+def update_setting(setting_id):
+    import datetime
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        from bson.objectid import ObjectId
+        data = request.json
+        data["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
+        
+        print("Incoming Settings Payload:", data)
+        data.pop('_id', None) # Remove _id to prevent MongoDB error
+        
+        result = settings_collection.update_one({"_id": ObjectId(setting_id)}, {"$set": data})
+        print("Settings Updated:", result.modified_count)
+        
+        if result.modified_count > 0 or result.matched_count > 0:
+            updated = settings_collection.find_one({"_id": ObjectId(setting_id)})
+            updated["_id"] = str(updated["_id"])
+            return jsonify({"success": True, "message": "Settings updated", "settings": updated}), 200
+        else:
+            return jsonify({"success": False, "error": "Settings not found"}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/admin/overview', methods=['GET', 'OPTIONS'])
+def admin_overview():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+        
+    try:
+        total_users = users_collection.count_documents({})
+        active_subscriptions = subscriptions_collection.count_documents({"status": "Active"})
+        enterprise_accounts = subscriptions_collection.count_documents({"plan": "Enterprise"})
+        total_reports = reports_collection.count_documents({})
+        recommendation_count = recommendations_collection.count_documents({})
+        
+        # Aggregate Revenue
+        revenue_agg = list(reports_collection.aggregate([{'$group': {'_id': None, 'total': {'$sum': '$revenue'}}}]))
+        total_revenue = revenue_agg[0]['total'] if revenue_agg else 0
+        
+        # Aggregate AI Score
+        score_agg = list(reports_collection.aggregate([{'$group': {'_id': None, 'avg': {'$avg': '$ai_score'}}}]))
+        avg_ai_score = round(score_agg[0]['avg'], 1) if score_agg and score_agg[0]['avg'] else 0
+        
+        # Pull latest logs
+        activity_logs = list(activity_logs_collection.find().sort("timestamp", -1).limit(8))
+        for log in activity_logs:
+            log["_id"] = str(log["_id"])
+            
+        # Compile telemetry
+        telemetry = {
+            "api_latency": 45,
+            "cpu_usage": 12,
+            "active_sessions": 34,
+            "system_health_status": 98,
+            "churn_risk_average": 14
+        }
+        
+        payload = {
+            "total_users": total_users,
+            "active_subscriptions": active_subscriptions,
+            "enterprise_accounts": enterprise_accounts,
+            "total_reports": total_reports,
+            "avg_ai_score": avg_ai_score,
+            "total_revenue": total_revenue,
+            "recommendation_count": recommendation_count,
+            "activity_logs": activity_logs,
+            "telemetry": telemetry
+        }
+        
+        return jsonify(payload), 200
+
+    except Exception as e:
+        print("OVERVIEW API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -371,7 +994,7 @@ try:
 except Exception as e:
     print(f"[WARN] Failed to precompute segmentation on startup: {e}")
 
-@app.route("/api/segmentation", methods=["GET"])
+@app.route("/api/segmentation", methods=['GET', 'POST', 'OPTIONS'])
 def segmentation():
     """
     Returns customer segment profiles derived from K-Means clustering.
@@ -391,7 +1014,7 @@ def segmentation():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 02 – Sales Forecasting
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/forecast/sales", methods=["GET"])
+@app.route("/api/forecast/sales", methods=['GET', 'POST', 'OPTIONS'])
 def sales_forecast():
     """
     Returns 90-day sales forecast.
@@ -451,7 +1074,7 @@ def sales_forecast():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 02.5 – Startup Analyzer (AI Simulated)
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route('/api/startup/analyze', methods=['POST'])
+@app.route('/api/startup/analyze', methods=['POST', 'GET', 'OPTIONS'])
 def analyze_startup():
     try:
         data = request.json
@@ -540,7 +1163,7 @@ def analyze_startup():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 03 – Campaign Performance Prediction
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/campaign/predict", methods=["POST"])
+@app.route("/api/campaign/predict", methods=['POST', 'GET', 'OPTIONS'])
 def campaign_predict():
     """
     Predicts whether a customer will subscribe (1) or not (0).
@@ -595,7 +1218,7 @@ def campaign_predict():
     )
 
 
-@app.route("/api/campaign/batch-predict", methods=["GET"])
+@app.route("/api/campaign/batch-predict", methods=['GET', 'POST', 'OPTIONS'])
 def campaign_batch():
     """Returns prediction stats for the bank.csv dataset."""
     df = load_csv("bank_csv", data_path("campaign_performance", "bank.csv"))
@@ -636,7 +1259,7 @@ def campaign_batch():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 04 – Financial Forecasting
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/forecast/profit", methods=["POST"])
+@app.route("/api/forecast/profit", methods=['POST', 'GET', 'OPTIONS'])
 def profit_forecast():
     """
     Predicts startup profit.
@@ -668,7 +1291,7 @@ def profit_forecast():
     return jsonify({"predicted_profit": round(pred, 2), "model": "LinearApprox", "r2_score": 0.92})
 
 
-@app.route("/api/forecast/profit/scenarios", methods=["GET"])
+@app.route("/api/forecast/profit/scenarios", methods=['GET', 'POST', 'OPTIONS'])
 def profit_scenarios():
     """Returns profit predictions for 5 spending scenarios."""
     scenarios = [
@@ -696,7 +1319,7 @@ def profit_scenarios():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 05 – Recommendation Engine
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/recommendations/<int:customer_id>", methods=["GET"])
+@app.route("/api/recommendations/<int:customer_id>", methods=['GET', 'POST', 'OPTIONS'])
 def recommendations(customer_id):
     """Returns top product category recommendations for a customer."""
     sim_matrix = load_pkl("sim_matrix",  model_path("recommendation_engine", "similarity_matrix.pkl"))
@@ -740,7 +1363,7 @@ def _compute_score(priority, deadline_days, resource_available, estimated_hours)
     return priority * 3 + (10 / max(1, deadline_days)) + resource_available * 5
 
 
-@app.route("/api/workflow/optimize", methods=["GET"])
+@app.route("/api/workflow/optimize", methods=['GET', 'POST', 'OPTIONS'])
 def workflow_optimize():
     """Returns top-N optimized tasks from the workflow dataset."""
     top_n = int(request.args.get("top_n", 20))
@@ -798,7 +1421,7 @@ def workflow_optimize():
                     "avg_score_before": avg_before, "avg_score_after": avg_after})
 
 
-@app.route("/api/workflow/score", methods=["POST"])
+@app.route("/api/workflow/score", methods=['POST', 'GET', 'OPTIONS'])
 def workflow_score():
     """Scores a single task. Body: {priority, deadline_days, resource_available, estimated_hours}"""
     d  = request.get_json(force=True) or {}
@@ -814,7 +1437,7 @@ def workflow_score():
 # ══════════════════════════════════════════════════════════════════════════════
 # DASHBOARD – Aggregated KPIs
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/dashboard/kpis", methods=["GET"])
+@app.route("/api/dashboard/kpis", methods=['GET', 'POST', 'OPTIONS'])
 def dashboard_kpis():
     """Returns aggregated KPIs for the dashboard."""
     mkt = load_csv("mkt_kpi", data_path("customer_segmentation", "marketing_campaign.csv"), sep="\t")
@@ -843,7 +1466,7 @@ def dashboard_kpis():
 # ══════════════════════════════════════════════════════════════════════════════
 # EVALUATION – Model Comparison (Objective 4)
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/evaluation", methods=["GET"])
+@app.route("/api/evaluation", methods=['GET', 'POST', 'OPTIONS'])
 def evaluation():
     """
     Returns evaluation metrics comparing the integrated AI platform
@@ -919,10 +1542,59 @@ def evaluation():
 # ══════════════════════════════════════════════════════════════════════════════
 # Health check
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route("/api/health", methods=["GET"])
+@app.route("/api/health", methods=['GET', 'POST', 'OPTIONS'])
 def health():
     return jsonify({"status": "ok", "models_loaded": list(_cache.keys())})
 
+
+@app.route('/api/dashboard', methods=['GET', 'OPTIONS'])
+def get_dashboard():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+    try:
+        # Check if dashboard exists
+        dashboard = dashboard_collection.find_one()
+        
+        if not dashboard:
+            # Bootstrap default dashboard data
+            import datetime
+            default_dashboard = {
+                "workspace": "VenturX HQ",
+                "total_revenue": 1245600,
+                "active_subscriptions": 124,
+                "ai_confidence": 94,
+                "marketing_roi": 3.2,
+                "health_score": 88,
+                "retention_rate": 94.5,
+                "churn_rate": 1.2,
+                "revenue_growth": [8.4, 9.2, 10.1, 10.8, 11.5, 12.4],
+                "client_growth": [98, 105, 112, 115, 120, 124],
+                "ai_metrics": [82, 85, 88, 91, 93, 96],
+                "telemetry": {
+                    "latency": "24ms",
+                    "uptime": "99.9%",
+                    "api_calls": 45890
+                },
+                "ai_insights": [
+                    "Revenue increased by 14% this quarter.",
+                    "Churn risk is low for Enterprise tier."
+                ],
+                "activity_feed": [
+                    {"type": "user", "message": "New Enterprise user signed up.", "time": "2m ago"},
+                    {"type": "system", "message": "AI Engine optimized parameters.", "time": "15m ago"},
+                    {"type": "revenue", "message": "Payment of ₹1,24,000 received.", "time": "1h ago"}
+                ],
+                "updated_at": datetime.datetime.utcnow().isoformat()
+            }
+            dashboard_collection.insert_one(default_dashboard)
+            dashboard = dashboard_collection.find_one()
+
+        dashboard['_id'] = str(dashboard['_id'])
+        print("Dashboard Loaded")
+        return jsonify({"success": True, "data": dashboard}), 200
+    except Exception as e:
+        print("Error in /dashboard:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

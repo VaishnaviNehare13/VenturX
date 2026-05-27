@@ -13,5 +13,5 @@ recommendations_collection = db["recommendations"]
 reports_collection = db["reports"]
 settings_collection = db["settings"]
 activity_logs_collection = db["activity_logs"]
-
+dashboard_collection = db["dashboard"]
 print("MongoDB Connected Successfully")
