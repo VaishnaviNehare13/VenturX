@@ -7,38 +7,39 @@
 const AnalyticsEngine = (() => {
  // Helpers to fetch data
  function getCRMData() {
-  const pde = window.PlatformDataEngine;
-  if (!pde) return { totalUsers:0, activeUsers:0, retention:0, churnRisk:0, data:[] };
+  const payload = window.LiveMongoPayload || {};
+  const dash = payload.dashboard || {};
+  const crmData = payload.crm || [];
   
-  const data = pde.getData().crm;
-  const totalUsers = pde.getTotalUsers();
-  const activeUsers = pde.getActiveUsers();
-  const retention = pde.getRetentionRate();
-  const churnRisk = 100 - retention;
-
-  return { totalUsers, activeUsers, retention, churnRisk, data };
+  return { 
+    totalUsers: dash.active_subscriptions || 0, 
+    activeUsers: Math.floor((dash.active_subscriptions || 0) * 0.8), 
+    retention: dash.retention_rate || 80, 
+    churnRisk: 100 - (dash.retention_rate || 80), 
+    data: crmData 
+  };
  }
 
  function getMarketingData() {
-  const pde = window.PlatformDataEngine;
-  if (!pde) return { totalLeads:0, reach:0, avgROI:0, avgSuccess:0, data:[] };
+  const payload = window.LiveMongoPayload || {};
+  const dash = payload.dashboard || {};
+  const campaigns = payload.campaigns || [];
   
-  const data = pde.getData().campaigns;
   let totalLeads = 0;
   let totalBudget = 0;
   let totalSuccess = 0;
   
-  data.forEach(c => {
+  campaigns.forEach(c => {
    totalLeads += parseInt(c.expectedLeads) || 0;
    totalBudget += parseFloat(c.budget) || 0;
    totalSuccess += parseFloat(c.successRate) || 0;
   });
 
-  const avgSuccess = data.length > 0 ? (totalSuccess / data.length) : 0;
-  const avgROI = totalBudget > 0 ? (((totalLeads * 120) - totalBudget) / totalBudget * 100) : 0;
-  const reach = pde.getMarketingReach();
+  const avgSuccess = campaigns.length > 0 ? (totalSuccess / campaigns.length) : 0;
+  const avgROI = Number(dash.marketing_roi || 0);
+  const reach = Number(dash.marketing_reach || 0);
   
-  return { totalLeads, reach, avgROI, avgSuccess, data };
+  return { totalLeads, reach, avgROI, avgSuccess, data: campaigns };
  }
 
  function getContentData() {

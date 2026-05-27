@@ -113,6 +113,22 @@ async function bootstrap() {
  
  if (session.isLoggedIn) {
   const route = session.role === "admin" ? "#/admin" : "#/dashboard";
+  
+  if (session.role !== "admin" && session.email) {
+      try {
+          console.log("Fetching live user payload for:", session.email);
+          const response = await fetch(`http://127.0.0.1:5000/api/user-dashboard/${session.email}`);
+          const json = await response.json();
+          if (json.success) {
+              window.LiveMongoPayload = json;
+              window.LiveMongoDashboard = json.dashboard;
+              window.PlatformData = json; // Ensure legacy modules like crm.js use live data
+          }
+      } catch(e) {
+          console.error("Failed to fetch live payload", e);
+      }
+  }
+
   console.log("Redirecting To:", route);
   if (!location.hash || location.hash === '#/' || location.hash === '#/login' || location.hash === '#/signup') {
     location.hash = route;

@@ -24,7 +24,8 @@ function createMarketingChart() {
  
  const colors = getChartColors();
  
- const existing = window.PlatformData.campaigns;
+ const payload = window.LiveMongoPayload || window.PlatformData || {};
+ const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
  let social = 0, email = 0, ppc = 0, display = 0, content = 0;
  
  if (existing.length === 0) {
@@ -94,7 +95,8 @@ function createPerformanceChart() {
  
  const colors = getChartColors();
  
- const existing = window.PlatformData.campaigns;
+ const payload = window.LiveMongoPayload || window.PlatformData || {};
+ const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
  let totalLeads = 0;
  existing.forEach(c => totalLeads += (parseInt(c.expectedLeads) || 0));
  
@@ -327,8 +329,10 @@ function saveCampaign(e) {
   roi: metrics.predictedROI
  };
 
- const campaigns = window.PlatformData.campaigns;
+ const payload = window.LiveMongoPayload || window.PlatformData || {};
+ const campaigns = Array.isArray(payload.campaigns) ? payload.campaigns : [];
  campaigns.push(newCampaign);
+ payload.campaigns = campaigns;
  window.PlatformEngine.logActivity('campaign', `Campaign launched: ${newCampaign.name}`);
  window.PlatformEngine.savePlatformData("marketing");
  
@@ -341,12 +345,13 @@ function saveCampaign(e) {
  createPerformanceChart();
 }
 
-function deleteCampaign(id) {
- const existing = window.PlatformData.campaigns;
- const filtered = existing.filter(c => c.id !== id);
- window.PlatformData.campaigns = filtered;
- window.PlatformEngine.logActivity('campaign', `Campaign deleted: ${id}`);
- window.PlatformEngine.savePlatformData("marketing");
+ function deleteCampaign(id) {
+  const payload = window.LiveMongoPayload || window.PlatformData || {};
+  const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+  const filtered = existing.filter(c => c.id !== id);
+  payload.campaigns = filtered;
+  window.PlatformEngine.logActivity('campaign', `Campaign deleted: ${id}`);
+  window.PlatformEngine.savePlatformData("marketing");
  renderActiveCampaigns();
  loadCampaignStats();
  createMarketingChart();
@@ -375,9 +380,10 @@ function generateAIRecommendations(campaign) {
  return recs.map(r => `<li style="margin-bottom: 4px;">${r}</li>`).join('');
 }
 
-function viewCampaign(id) {
- const existing = window.PlatformData.campaigns;
- const campaign = existing.find(c => c.id === id);
+ function viewCampaign(id) {
+  const payload = window.LiveMongoPayload || window.PlatformData || {};
+  const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+  const campaign = existing.find(c => c.id === id);
  
  if (!campaign) {
   if (['summer', 'webinar', 'brand', 'retarget', 'launch', 'holiday'].includes(id)) {
@@ -429,35 +435,29 @@ function getStatusBadge(budget) {
 
 function renderActiveCampaigns() {
   const container = document.getElementById("activeCampaignsList");
-
-  if (!container) {
-    console.error("activeCampaignsList not found");
-    return;
-  }
-
-  const campaigns = window.PlatformData.campaigns;
-
-  if (campaigns.length === 0) {
-    const demoCampaign = {
-      id: "cmp001",
-      name: "Instagram Festival Ads",
-      platform: "Instagram",
-      type: "Social Media",
-      budget: 25000,
-      roi: 180,
-      status: "Active"
-    };
-    campaigns.push(demoCampaign);
-    window.PlatformEngine.logActivity('campaign', `Demo campaign created: ${demoCampaign.name}`);
-    window.PlatformEngine.savePlatformData("marketing");
-  }
+  const tableBody = document.getElementById("campaignTableBody");
+  const payload = window.LiveMongoPayload || window.PlatformData || {};
+  const campaigns = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+  const analytics = window.LiveMongoDashboard || window.PlatformData || {};
+  
+  console.log("MARKETING DASHBOARD SOURCE:", analytics);
+  console.log("FULL PAYLOAD:", payload);
+  console.log("LIVE CAMPAIGNS:", payload.campaigns);
+  console.log("LIVE ROI:", analytics.marketing_roi);
+  console.log("LIVE AI:", analytics.ai_confidence);
+  console.log("LIVE SCORE:", analytics.prediction_score);
 
   if (campaigns.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        No active campaigns found
-      </div>
-    `;
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-state">
+          No active campaigns found
+        </div>
+      `;
+    }
+    if (tableBody) {
+      tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px;">No campaigns available</td></tr>`;
+    }
     return;
   }
 
@@ -472,59 +472,78 @@ function renderActiveCampaigns() {
     return '<i data-lucide="zap" class="icon-sm text-amber-500"></i>';
   };
 
-  container.innerHTML = campaigns.map(campaign => `
-<div class="campaign-card">
-  <div class="campaign-top">
-    <div class="campaign-title-wrap">
-      <div class="campaign-icon">
-        ${getIcon(campaign.platform)}
+  if (container) {
+    container.innerHTML = campaigns.map(campaign => `
+  <div class="campaign-card">
+    <div class="campaign-top">
+      <div class="campaign-title-wrap">
+        <div class="campaign-icon">
+          ${getIcon(campaign.platform || '')}
+        </div>
+        <div>
+          <h3>${campaign.name || 'Unnamed Campaign'}</h3>
+          <p class="platform-text">
+            ${campaign.platform || 'General'}
+          </p>
+        </div>
       </div>
-      <div>
-        <h3>${campaign.name}</h3>
-        <p class="platform-text">
-          ${campaign.platform}
-        </p>
+      <div class="status-chip ${(campaign.status || '').toLowerCase() === 'active' ? 'active' : ''}">
+        ● ${campaign.status || 'Active'}
       </div>
     </div>
-    <div class="status-chip ${campaign.status.toLowerCase() === 'active' ? 'active' : ''}">
-      ● ${campaign.status}
+    <div class="stats-grid">
+      <div class="mini-stat">
+        <span>Type</span>
+        <strong>${campaign.type || 'N/A'}</strong>
+      </div>
+      <div class="mini-stat">
+        <span>Budget</span>
+        <strong>₹${campaign.budget || 0}</strong>
+      </div>
+      <div class="mini-stat">
+        <span>ROI</span>
+        <strong class="roi-value">
+          ${campaign.roi || campaign.predictedROI || 0}%
+        </strong>
+      </div>
+    </div>
+    <div class="roi-section">
+      <div class="roi-labels">
+        <span>Campaign Performance</span>
+        <span>${campaign.roi || campaign.predictedROI || 0}%</span>
+      </div>
+      <div class="roi-bar">
+        <div class="roi-fill" style="width: ${Math.min(100, (campaign.roi || campaign.predictedROI || 0))}%"></div>
+      </div>
+    </div>
+    <div class="campaign-buttons">
+      <button class="analytics-btn" onclick="viewCampaign('${campaign.id}')">
+        <i data-lucide="bar-chart" class="icon-sm text-blue-500"></i> View Analytics
+      </button>
+      <button class="delete-btn" onclick="deleteCampaign('${campaign.id}')">
+         Delete
+      </button>
     </div>
   </div>
-  <div class="stats-grid">
-    <div class="mini-stat">
-      <span>Type</span>
-      <strong>${campaign.type}</strong>
-    </div>
-    <div class="mini-stat">
-      <span>Budget</span>
-      <strong>₹${campaign.budget}</strong>
-    </div>
-    <div class="mini-stat">
-      <span>ROI</span>
-      <strong class="roi-value">
-        ${campaign.roi || campaign.predictedROI || 0}%
-      </strong>
-    </div>
-  </div>
-  <div class="roi-section">
-    <div class="roi-labels">
-      <span>Campaign Performance</span>
-      <span>${campaign.roi || campaign.predictedROI || 0}%</span>
-    </div>
-    <div class="roi-bar">
-      <div class="roi-fill" style="width: ${Math.min(100, (campaign.roi || campaign.predictedROI || 0))}%"></div>
-    </div>
-  </div>
-  <div class="campaign-buttons">
-    <button class="analytics-btn" onclick="viewCampaign('${campaign.id}')">
-      <i data-lucide="bar-chart" class="icon-sm text-blue-500"></i> View Analytics
-    </button>
-    <button class="delete-btn" onclick="deleteCampaign('${campaign.id}')">
-       Delete
-    </button>
-  </div>
-</div>
-  `).join("");
+    `).join("");
+  }
+
+  if (tableBody) {
+    tableBody.innerHTML = campaigns.map(campaign => `
+      <tr data-status="${(campaign.status || 'active').toLowerCase()}">
+       <td><strong>${campaign.name || 'Unnamed Campaign'}</strong><br><span class="muted" style="font-size: 12px;">${campaign.type || 'Campaign'}</span></td>
+       <td><span class="badge" style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3);">${campaign.platform || 'General'}</span></td>
+       <td>${campaign.startDate || new Date(campaign.createdAt || Date.now()).toLocaleDateString('en-IN', { month: 'short', day: '2-digit', year: 'numeric' })}</td>
+       <td><span class="badge" style="color:${(campaign.status||'').toLowerCase()==='active'?'#10b981':'#f59e0b'}; background:${(campaign.status||'').toLowerCase()==='active'?'rgba(16,185,129,0.15)':'rgba(245,158,11,0.15)'}; border-color:${(campaign.status||'').toLowerCase()==='active'?'rgba(16,185,129,0.3)':'rgba(245,158,11,0.3)'};">${(campaign.status||'').toLowerCase()==='active'?'✓ Active':campaign.status||'Active'}</span></td>
+       <td style="text-align: right;">₹${(campaign.budget || 0).toLocaleString('en-IN')}</td>
+       <td style="text-align: right; font-weight: 600;">₹${(campaign.spent || Math.floor((campaign.budget || 0) * 0.8)).toLocaleString('en-IN')}</td>
+       <td style="text-align: right; font-weight: 600;">${campaign.expectedLeads || campaign.leads || 0}</td>
+       <td style="text-align: right; font-weight: 700; color: #10b981;">${campaign.roi || campaign.predictedROI || 0}%</td>
+       <td style="text-align: center;"><button class="btn-premium" onclick="viewCampaign('${campaign.id}')">View</button></td>
+      </tr>
+    `).join("");
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 async function predictCampaign() {
@@ -620,40 +639,37 @@ function updateMarketingDashboard() {
  renderActiveCampaigns();
 }
 
-function loadCampaignStats() {
- const existing = window.PlatformData.campaigns;
- 
- if (existing.length === 0) {
-  animateValue('predictedConversions', 0, 0, 1000);
-  animateValue('successRate', 0, 0, 1000, '%');
-  animateValue('aiPredictionAccuracy', 0, 83.3, 1000, '%');
-  animateValue('marketingRoi', 0, 0, 1000, '%');
-  return;
+ function loadCampaignStats() {
+  const payload = window.LiveMongoPayload || window.PlatformData || {};
+  const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+  const analytics = window.LiveMongoDashboard || window.PlatformData || {};
+  console.log("MARKETING DASHBOARD SOURCE:", analytics);
+  
+  let totalLeads = 0;
+  existing.forEach(c => {
+   totalLeads += parseInt(c.expectedLeads) || 0;
+  });
+  
+  const roi = Number(analytics.marketing_roi || 0).toFixed(1);
+  const ai = Number(analytics.ai_confidence || 0).toFixed(1);
+  const score = Number(analytics.prediction_score || 0).toFixed(1);
+
+  console.log("LIVE ROI:", roi);
+  console.log("LIVE AI:", ai);
+  console.log("LIVE SCORE:", score);
+
+  const aiElement = document.getElementById('aiPredictionAccuracy');
+  if (aiElement) aiElement.textContent = `${ai}%`;
+  
+  const roiElement = document.getElementById('marketingRoi');
+  if (roiElement) roiElement.textContent = `${roi}%`;
+  
+  const successElement = document.getElementById('successRate');
+  if (successElement) successElement.textContent = `${score}%`;
+  
+  // Note: predictedConversions is still animated normally as it's a lead count, not a percentage
+  animateValue('predictedConversions', 0, totalLeads, 1500);
  }
- 
- let totalLeads = 0;
- let totalBudget = 0;
- let totalSuccessScore = 0;
- 
- existing.forEach(c => {
-  totalLeads += parseInt(c.expectedLeads) || 0;
-  totalBudget += parseFloat(c.budget) || 0;
-  totalSuccessScore += parseFloat(c.successRate) || 0;
- });
- 
- const avgSuccessRate = totalSuccessScore / existing.length;
- let avgROI = 0;
- if (totalBudget > 0) {
-  avgROI = (((totalLeads * 120) - totalBudget) / totalBudget * 100);
- }
- 
- const accuracy = 80 + Math.min(15, existing.length * 2);
- 
- animateValue('predictedConversions', 0, totalLeads, 1500);
- animateValue('successRate', 0, avgSuccessRate, 1500, '%');
- animateValue('aiPredictionAccuracy', 0, accuracy, 1500, '%');
- animateValue('marketingRoi', 0, avgROI, 1500, '%');
-}
 
 window.predictCampaign = predictCampaign;
 window.openNewCampaignModal = openNewCampaignModal;
@@ -668,6 +684,8 @@ console.log("Marketing JS Loaded Successfully");
 console.log("Campaign Functions Registered");
 
 window.initMarketingPage = function() {
+ const payload = window.LiveMongoPayload || window.PlatformData || {};
+ console.log("FINAL LIVE MARKETING PAYLOAD:", payload);
  if (window.Chart) {
   createMarketingChart();
   createPerformanceChart();

@@ -87,6 +87,7 @@ window.initializeForecasting = async function() {
    closeModal();
    
    const payload = {
+    user_email: window.LiveMongoPayload?.user?.email || "founder@startup.com",
     startup_name: document.getElementById('suName').value,
     domain: document.getElementById('suDomain').value,
     target_audience: document.getElementById('suAudience').value,
@@ -414,6 +415,9 @@ async function runStartupAnalysis(payload) {
    window.API.Forecasting.analyzeStartup(payload),
    minWait
   ]);
+  
+  console.log("FORECAST INPUT:", payload);
+  console.log("FORECAST RESPONSE:", response);
   
   // Convert backend fields to match frontend expectations if necessary
   const formattedData = {

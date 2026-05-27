@@ -6,6 +6,43 @@
 
 let globalFilterDays = 30;
 
+window.formatTime = function(value) {
+    if (!value) return "N/A";
+
+    try {
+        if (typeof value === "string" && !value.includes("-")) {
+            // Check if it's just seconds (e.g. 145s) for legacy top pages
+            if (!isNaN(value)) {
+               const secs = parseInt(value);
+               const m = Math.floor(secs / 60);
+               const s = secs % 60;
+               return `${m}m ${s}s`;
+            }
+            return value;
+        }
+
+        const date = new Date(value);
+        if (isNaN(date.getTime())) {
+           // Fallback to seconds format if it was a number
+           if (typeof value === "number") {
+             const m = Math.floor(value / 60);
+             const s = value % 60;
+             return `${m}m ${s}s`;
+           }
+           return "N/A";
+        }
+
+        return date.toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch (e) {
+        return "N/A";
+    }
+}
+
 window.applyGlobalFilter = function() {
   const val = document.getElementById('globalDateFilter').value;
   globalFilterDays = parseInt(val);
@@ -133,23 +170,17 @@ function initHealthScoreChart() {
  });
 }
 
-function initUserGrowthChart() {
- const ctx = document.getElementById('userGrowthChart');
- if (!ctx || !window.Chart) return;
- if (analyticsCharts.userGrowth) analyticsCharts.userGrowth.destroy();
+ function initUserGrowthChart() {
+  const ctx = document.getElementById('userGrowthChart');
+  if (!ctx || !window.Chart) return;
+  if (analyticsCharts.userGrowth) analyticsCharts.userGrowth.destroy();
 
- const colors = getChartColors();
- const crm = AnalyticsEngine.getCRMData();
- 
- // Use real CRM data to generate trend or use realistic fallback
- let activeData = [25000, 32000, 48000, 65000, 89000, 124000];
- let newData = [120, 180, 310, 450, 780, 1240];
- 
- if (crm.totalUsers > 0) {
-   const base = crm.totalUsers;
-   activeData = [base*0.4, base*0.5, base*0.7, base*0.8, base*0.9, base];
-   newData = [base*0.1, base*0.15, base*0.2, base*0.25, base*0.1, base*0.05].map(Math.round);
- }
+  const colors = getChartColors();
+  
+  // Use real Mongo data
+  const dash = window.LiveMongoDashboard || {};
+  let activeData = dash.growth_chart || [25000, 32000, 48000, 65000, 89000, 124000];
+  let newData = dash.client_growth || [120, 180, 310, 450, 780, 1240];
 
  analyticsCharts.userGrowth = new Chart(ctx, {
   type: 'bar',
@@ -198,21 +229,25 @@ function initUserGrowthChart() {
  });
 }
 
-function initPlatformUsageChart() {
- const ctx = document.getElementById('platformUsageChart');
- if (!ctx || !window.Chart) return;
- if (analyticsCharts.platformUsage) analyticsCharts.platformUsage.destroy();
+ function initPlatformUsageChart() {
+  const ctx = document.getElementById('platformUsageChart');
+  if (!ctx || !window.Chart) return;
+  if (analyticsCharts.platformUsage) analyticsCharts.platformUsage.destroy();
 
- const colors = getChartColors();
- 
- // Dynamically pull data usage
- const crmCount = AnalyticsEngine.getCRMData().totalUsers * 10; // weighted
- const mktCount = AnalyticsEngine.getMarketingData().data.length * 15;
- const contentCount = AnalyticsEngine.getContentData().draftsCount * 12;
- const brandCount = AnalyticsEngine.getBrandingData().hasBrand ? 20 : 5;
- 
- // Normalize against 100
- const max = Math.max(crmCount, mktCount, contentCount, brandCount, 85);
+  const colors = getChartColors();
+  
+  // Dynamically pull data usage from Mongo payload
+  const payload = window.LiveMongoPayload || {};
+  const crmCount = (payload.crm || []).length * 10;
+  const mktCount = (payload.campaigns || []).length * 15;
+  const contentCount = (payload.activity_logs || []).filter(a => a.type === 'content').length * 12;
+  const forecastCount = (payload.forecasts || []).length * 10;
+  
+  const cScore = Math.min(100, crmCount || 85);
+  const mScore = Math.min(100, mktCount || 65);
+  const contScore = Math.min(100, contentCount || 58);
+  const fScore = Math.min(100, forecastCount || 72);
+  const bScore = 94;
 
  analyticsCharts.platformUsage = new Chart(ctx, {
   type: 'radar',
@@ -220,7 +255,7 @@ function initPlatformUsageChart() {
    labels: ['CRM', 'Forecasting', 'Marketing', 'Branding Studio', 'Content Hub'],
    datasets: [{
     label: 'Current Quarter',
-    data: [(crmCount/max)*100 || 85, 72, (mktCount/max)*100 || 65, (brandCount/max)*100 || 94, (contentCount/max)*100 || 58],
+    data: [cScore, fScore, mScore, bScore, contScore],
     backgroundColor: 'rgba(99, 102, 241, 0.2)',
     borderColor: colors.primary,
     pointBackgroundColor: colors.primary,
@@ -262,28 +297,29 @@ function initPlatformUsageChart() {
  });
 }
 
-function initSourcesChart() {
- const ctx = document.getElementById('sourcesChart');
- if (!ctx || !window.Chart) return;
- if (analyticsCharts.sources) analyticsCharts.sources.destroy();
+ function initSourcesChart() {
+  const ctx = document.getElementById('sourcesChart');
+  if (!ctx || !window.Chart) return;
+  if (analyticsCharts.sources) analyticsCharts.sources.destroy();
 
- const colors = getChartColors();
- 
- // Map Marketing Campaign Platforms to Sources
- const mkt = AnalyticsEngine.getMarketingData().data;
- let organic = 38, social = 22, direct = 18, referral = 7, paid = 15;
- 
- if (mkt.length > 0) {
-   social += mkt.filter(c => ['Instagram','Facebook','TikTok','LinkedIn'].includes(c.platform)).length * 5;
-   paid += mkt.filter(c => ['Google Ads'].includes(c.platform)).length * 10;
-   // Re-normalize
-   const total = organic + social + direct + referral + paid;
-   organic = Math.round((organic/total)*100);
-   social = Math.round((social/total)*100);
-   direct = Math.round((direct/total)*100);
-   referral = Math.round((referral/total)*100);
-   paid = Math.round((paid/total)*100);
- }
+  const colors = getChartColors();
+  
+  // Use Live Mongo Dashboard traffic sources
+  const dash = window.LiveMongoDashboard || {};
+  const t = dash.traffic_sources || { organic: 38, social: 22, direct: 18, referral: 7, paid: 15 };
+  
+  let organic = t.organic || 38;
+  let social = t.social || 22;
+  let direct = t.direct || 18;
+  let referral = t.referral || 7;
+  let paid = t.paid || 15;
+  
+  const total = organic + social + direct + referral + paid;
+  organic = Math.round((organic/total)*100);
+  social = Math.round((social/total)*100);
+  direct = Math.round((direct/total)*100);
+  referral = Math.round((referral/total)*100);
+  paid = Math.round((paid/total)*100);
 
  analyticsCharts.sources = new Chart(ctx, {
   type: 'doughnut',
@@ -316,14 +352,21 @@ function initSourcesChart() {
  });
 }
 
-async function loadAndInitForecast() {
- const periods = parseInt(document.getElementById('forecastPeriod')?.value || '90');
- let data = await AnalyticsEngine.getForecastingData();
- 
- if (!data) {
-   // Generate fallback directly here for the UI
-   data = generateFallbackForecast(periods);
- }
+ async function loadAndInitForecast() {
+  const periods = parseInt(document.getElementById('forecastPeriod')?.value || '90');
+  
+  const payload = window.LiveMongoPayload || {};
+  const forecasts = payload.forecasts || [];
+  
+  let data = null;
+  if (forecasts.length > 0 && forecasts[0].forecast_data) {
+     data = { forecast: forecasts[0].forecast_data };
+  } else {
+     data = await AnalyticsEngine.getForecastingData();
+     if (!data) {
+       data = generateFallbackForecast(periods);
+     }
+  }
 
  const forecastData = data.forecast || [];
  const total = forecastData.reduce((sum, d) => sum + d.predicted, 0);
@@ -560,28 +603,21 @@ window.closeBiModal = function(id) {
   if (modal) modal.classList.remove('open');
 };
 
-// --- TOP PAGES TABLE LOGIC ---
-let topPagesData = [
-  { path: '/', views: 45020, bounce: 32, time: 145, conv: 4.2 },
-  { path: '/pricing', views: 28400, bounce: 45, time: 90, conv: 8.5 },
-  { path: '/blog/ai-startups', views: 19200, bounce: 65, time: 210, conv: 1.2 },
-  { path: '/features/branding', views: 15800, bounce: 28, time: 180, conv: 6.8 },
-  { path: '/signup', views: 12400, bounce: 20, time: 300, conv: 22.4 }
-];
-let currentSortCol = 'views';
-let currentSortAsc = false;
-
-function formatTime(secs) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m}m ${s}s`;
-}
-
-window.renderTopPages = function(dataToRender = topPagesData) {
-  const tbody = document.getElementById('topPagesTable');
-  if (!tbody) return;
-  
-  tbody.innerHTML = dataToRender.map(row => `
+ // --- TOP PAGES TABLE LOGIC ---
+ window.renderTopPages = function() {
+   const dash = window.LiveMongoDashboard || {};
+   const dataToRender = dash.top_performing_pages || [
+     { path: '/', views: 45020, bounce: 32, time: 145, conv: 4.2 },
+     { path: '/pricing', views: 28400, bounce: 45, time: 90, conv: 8.5 },
+     { path: '/blog/ai-startups', views: 19200, bounce: 65, time: 210, conv: 1.2 },
+     { path: '/features/branding', views: 15800, bounce: 28, time: 180, conv: 6.8 },
+     { path: '/signup', views: 12400, bounce: 20, time: 300, conv: 22.4 }
+   ];
+   
+   const tbody = document.getElementById('topPagesTable');
+   if (!tbody) return;
+   
+   tbody.innerHTML = dataToRender.map(row => `
     <tr class="interactive-row" onclick="window.Router.navigate('#/segmentation')">
       <td style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: #f8fafc; font-weight: 500;">${row.path}</td>
       <td style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">${row.views.toLocaleString('en-IN')}</td>
@@ -592,36 +628,21 @@ window.renderTopPages = function(dataToRender = topPagesData) {
   `).join('');
 };
 
-window.sortTopPages = function(col) {
-  if (currentSortCol === col) {
-    currentSortAsc = !currentSortAsc;
-  } else {
-    currentSortCol = col;
-    currentSortAsc = false;
-  }
-  
-  topPagesData.sort((a, b) => {
-    let valA = a[col];
-    let valB = b[col];
-    if (typeof valA === 'string') {
-      return currentSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-    }
-    return currentSortAsc ? valA - valB : valB - valA;
-  });
-  
-  renderTopPages();
-};
+ window.sortTopPages = function(col) {
+   const dash = window.LiveMongoDashboard || {};
+   if (!dash.top_performing_pages) return;
+   dash.top_performing_pages.sort((a, b) => b.views - a.views);
+   renderTopPages();
+ };
 
-window.filterTopPagesBySource = function(source) {
-  const status = document.getElementById('tableFilterStatus');
-  if (status) {
-    status.style.display = 'inline-block';
-    status.textContent = 'Source: ' + source;
-  }
-  // Mock filter by scrambling data slightly
-  const filtered = topPagesData.map(d => ({ ...d, views: Math.round(d.views * (Math.random() * 0.5 + 0.1)) })).sort((a,b)=>b.views-a.views);
-  renderTopPages(filtered);
-};
+ window.filterTopPagesBySource = function(source) {
+   const status = document.getElementById('tableFilterStatus');
+   if (status) {
+     status.style.display = 'inline-block';
+     status.textContent = 'Source: ' + source;
+   }
+   renderTopPages();
+ };
 
 // --- LIVE ACTIVITY FEED ---
 let activityFeedInterval = null;
@@ -635,13 +656,22 @@ const activityEvents = [
   { icon: '', msg: 'AI Blog Writer drafted 3 new SEO posts' }
 ];
 
-function initActivityFeed() {
-  const feed = document.getElementById('liveActivityFeed');
-  if (!feed) return;
-  
-  const refreshFeed = () => {
-    if (!window.PlatformData || !window.PlatformData.notifications) return;
-    const notifications = window.PlatformData.notifications.slice(0, 8);
+ function initActivityFeed() {
+   const feed = document.getElementById('liveActivityFeed');
+   if (!feed) return;
+   
+   const refreshFeed = () => {
+     const payload = window.LiveMongoPayload || {};
+     let logs = payload.activity_logs || [];
+     
+     // Fallback if Mongo payload is completely empty (no activity)
+     if (logs.length === 0) {
+       feed.innerHTML = '<div class="muted" style="font-size: 13px; text-align: center; padding: 20px;">No platform activity yet.</div>';
+       return;
+     }
+     
+     // Limit to 8
+     const notifications = logs.slice(0, 8);
     
     if (notifications.length === 0) {
       feed.innerHTML = '<div class="muted" style="font-size: 13px; text-align: center; padding: 20px;">No platform activity yet.</div>';
@@ -665,9 +695,11 @@ function initActivityFeed() {
   window.addEventListener('platform:data-updated', refreshFeed);
 }
 
-window.initAnalyticsPage = function() {
- updateAnalyticsKPIs();
- renderAIInsights();
+ window.initAnalyticsPage = function() {
+  console.log("LIVE MONGO CHART DATA:", window.LiveMongoPayload);
+  
+  updateAnalyticsKPIs();
+  renderAIInsights();
  
  initHealthScoreChart();
  initUserGrowthChart();

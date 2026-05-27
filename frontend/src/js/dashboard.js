@@ -309,13 +309,20 @@ async function loadLiveAnalytics() {
 
 async function loadDashboard() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/dashboard");
+        const sessionStr = localStorage.getItem("venturx_session");
+        if (!sessionStr) return;
+        
+        const user = JSON.parse(sessionStr);
+        const email = user.email;
+        if (!email) return;
+
+        const response = await fetch(`http://127.0.0.1:5000/api/user-dashboard/${email}`);
         if (!response.ok) throw new Error("Dashboard API error");
         const json = await response.json();
         
-        if (json.success && json.data) {
-            console.log("Dashboard Loaded:", json.data);
-            window.LiveMongoDashboard = json.data;
+        if (json.success && json.dashboard) {
+            console.log("User Dashboard Loaded:", json.dashboard);
+            window.LiveMongoDashboard = json.dashboard;
             renderDashboard();
             console.log("Live Mongo Dashboard Synced");
         }
@@ -364,23 +371,23 @@ function renderDashboard() {
     if (retentionSpan) retentionSpan.innerText = (data.retention_rate || 0) + '%';
     
     const churnSpan = document.querySelector('#kpi-detail-subs div:nth-child(1) span:nth-child(2)');
-    if (churnSpan) churnSpan.innerText = (data.churn_rate || 0) + '% (Healthy)';
+    const churnValue = data.churn_rate || (100 - (data.retention_rate || 100));
+    if (churnSpan) churnSpan.innerText = churnValue + '% (Healthy)';
 
-    // Update Health Score UI
-    const healthEls = document.querySelectorAll('.health-score-container'); // Find any element that might display health
-    // Actually in dashboard.html it's typically within a specific card. Let's rely on standard elements if any.
-
+    // Update Health Score UI (Optional, if it exists)
+    const healthEls = document.querySelectorAll('.health-score-container'); 
 
     // Update Activity Feed
     const feedContainer = document.getElementById('activityFeed');
-    if (feedContainer && data.activity_feed) {
-        feedContainer.innerHTML = data.activity_feed.map(item => `
+    const logs = window.LiveMongoPayload?.activity_logs || data.activity_feed;
+    if (feedContainer && logs && logs.length > 0) {
+        feedContainer.innerHTML = logs.slice(0,5).map(item => `
             <div class="feed-item">
                 <div class="feed-icon"><i data-lucide="${item.type === 'revenue' ? 'indian-rupee' : (item.type === 'user' ? 'user' : 'cpu')}" class="icon-sm text-${item.type === 'revenue' ? 'green' : (item.type === 'user' ? 'blue' : 'purple')}-500"></i></div>
                 <div class="feed-content">
                     <h5>${item.type === 'revenue' ? 'Payment Event' : (item.type === 'user' ? 'User Activity' : 'System Event')}</h5>
-                    <p>${item.message}</p>
-                    <span class="feed-time">${item.time}</span>
+                    <p>${item.message || item.msg}</p>
+                    <span class="feed-time">${item.time || (item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now')}</span>
                 </div>
             </div>
         `).join('');
@@ -403,11 +410,8 @@ function renderDashboard() {
                 </div>
             `).join('');
             
-            // Remove old insight cards safely using the cached parent reference
             const oldCards = parent.querySelectorAll('.insight-card');
             oldCards.forEach(c => c.remove());
-            
-            // Insert new ones safely
             parent.insertAdjacentHTML('beforeend', insightsHtml);
         }
     }
@@ -419,9 +423,9 @@ function renderDashboard() {
 
     // Overwrite Chart Datasets
 
-    if (data.revenue_growth) chartDatasets.revenue.data = data.revenue_growth;
+    if (data.growth_chart || data.revenue_growth) chartDatasets.revenue.data = data.growth_chart || data.revenue_growth;
     if (data.client_growth) chartDatasets.growth.data = data.client_growth;
-    if (data.ai_metrics) chartDatasets.aiMetrics.data = data.ai_metrics;
+    if (data.ai_metrics || data.prediction_score) chartDatasets.aiMetrics.data = data.ai_metrics || [data.prediction_score];
 
     // Trigger Animations and Chart rendering
     requestAnimationFrame(() => {

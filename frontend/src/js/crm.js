@@ -204,19 +204,29 @@ window.closeAddLeadModal = function() {
  document.getElementById('modalAddLead').classList.remove('open');
 };
 
-window.handleAddLead = function(e) {
+window.handleAddLead = async function(e) {
  e.preventDefault();
  
+ const founder_name = document.getElementById('leadName').value;
+ const email = document.getElementById('leadEmail').value;
+ const startup_name = document.getElementById('leadCompany').value;
+ const industry = document.getElementById('leadIndustry').value;
+ const subscription_plan = document.getElementById('leadPlan').value;
+ const activity_level = document.getElementById('leadActivity').value;
+ const lifecycle_stage = document.getElementById('leadStage').value;
+ const forecasts_created = parseInt(document.getElementById('leadForecasts').value) || 0;
+ const admin_notes = document.getElementById('leadNotes').value;
+
  const leadData = {
-  fullName: document.getElementById('leadName').value,
-  email: document.getElementById('leadEmail').value,
-  startupName: document.getElementById('leadCompany').value,
-  startupIndustry: document.getElementById('leadIndustry').value,
-  subscriptionPlan: document.getElementById('leadPlan').value,
-  activityLevel: document.getElementById('leadActivity').value,
-  status: document.getElementById('leadStage').value,
-  forecastsCreated: parseInt(document.getElementById('leadForecasts').value) || 0,
-  notes: document.getElementById('leadNotes').value,
+  fullName: founder_name,
+  email: email,
+  startupName: startup_name,
+  startupIndustry: industry,
+  subscriptionPlan: subscription_plan,
+  activityLevel: activity_level,
+  status: lifecycle_stage,
+  forecastsCreated: forecasts_created,
+  notes: admin_notes,
   lastActive: new Date().toISOString()
  };
  
@@ -227,6 +237,26 @@ window.handleAddLead = function(e) {
    window.PlatformEngine.logActivity('crm', `Updated CRM Lead: ${leadData.startupName}`);
   }
  } else {
+  const payload = {
+      founder_name,
+      email,
+      startup_name,
+      industry,
+      subscription_plan,
+      activity_level,
+      lifecycle_stage,
+      forecasts_created,
+      admin_notes
+  };
+
+  console.log("CRM INPUT:", payload);
+  try {
+      const response = await window.API.CRM.addCRMStartup(payload);
+      console.log("CRM RESPONSE:", response);
+  } catch (error) {
+      console.error("Failed to add to MongoDB:", error);
+  }
+
   saasCustomers.push({
    id: 'user_' + Date.now(),
    joinedDate: new Date().toISOString(),

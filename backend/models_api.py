@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
 from bson import ObjectId
@@ -25,13 +26,18 @@ from db import (
     users_collection,
     subscriptions_collection,
     analytics_collection,
+    user_analytics_collection,
     campaigns_collection,
     forecasts_collection,
     recommendations_collection,
     reports_collection,
     settings_collection,
     activity_logs_collection,
-    dashboard_collection
+    dashboard_collection,
+    crm_collection,
+    segmentation_collection,
+    contenthub_collection,
+    branding_collection
 )
 
 warnings.filterwarnings("ignore")
@@ -40,9 +46,11 @@ app = Flask(__name__)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": "*"}},
+    resources={r"/*": {"origins": "*"}},
     supports_credentials=True
 )
+
+print("CORS ENABLED SUCCESSFULLY")
 
 @app.route("/api/test", methods=["GET"])
 def api_test():
@@ -52,23 +60,63 @@ def api_test():
 # TEST MONGODB ROUTE
 # ─────────────────────────────────────
 
-@app.route('/api/signup', methods=['POST', 'GET', 'OPTIONS'])
+@app.route('/api/signup', methods=['POST', 'OPTIONS'])
 def signup():
 
-    data = request.json
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "ok"})
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
 
-    email = data.get("email")
+    try:
+        data = request.json
+        
+        email = data.get("email", "").strip().lower()
+        existing_user = users_collection.find_one({"email": email})
+        
+        if existing_user:
+            return jsonify({
+                "success": False,
+                "message": "Email already exists"
+            })
 
-    existing_user = users_collection.find_one({
-        "email": email
-    })
+        hashed_password = bcrypt.hashpw(
+            data.get("password").encode('utf-8'),
+            bcrypt.gensalt()
+        )
 
-    if existing_user:
+        user = {
+            "name": data.get("fullName") or data.get("name"),
+            "email": email,
+            "startup_name": data.get("startupName") or data.get("company"),
+            "industry": data.get("industry"),
+            "team_size": data.get("teamSize") or data.get("team_size"),
+            "password": hashed_password.decode('utf-8'),
+            "plan": "Starter",
+            "status": "Active",
+            "revenue": 0,
+            "ai_engagement": 84,
+            "churn_risk": "Low"
+        }
+
+        result = users_collection.insert_one(user)
+        user["_id"] = str(result.inserted_id)
+        del user["password"]
 
         return jsonify({
+            "success": True,
+            "message": "Signup successful",
+            "user": user
+        }), 200
+
+    except Exception as e:
+        print("Signup Error:", str(e))
+        return jsonify({
             "success": False,
-            "message": "Email already exists"
-        })
+            "error": str(e)
+        }), 500
 
     hashed_password = bcrypt.hashpw(
         data.get("password").encode('utf-8'),
@@ -102,17 +150,107 @@ def signup():
         "user": new_user
     })
 
-@app.route('/api/login', methods=['POST', 'OPTIONS'])
+@app.route("/api/login", methods=["POST", "OPTIONS"])
 def login():
-    print("LOGIN ROUTE HIT")
-    print("REQUEST METHOD:", request.method)
 
     if request.method == "OPTIONS":
-        return jsonify({"success": True}), 200
+        return jsonify({"status": "ok"}), 200
+
+    try:
+        data = request.get_json()
+
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "").strip()
+
+        if not email or not password:
+            return jsonify({
+                "success": False,
+                "message": "Email and password required"
+            }), 400
+
+        user = users_collection.find_one({
+            "email": email
+        })
+
+        if not user:
+            return jsonify({
+                "success": False,
+                "message": "User not found"
+            }), 401
+
+        stored_password = user.get("password")
+
+        if not stored_password:
+            return jsonify({
+                "success": False,
+                "message": "Password missing"
+            }), 401
+
+        print("LOGIN EMAIL:", email)
+        print("USER FOUND:", user is not None)
+
+        password_match = bcrypt.checkpw(
+            password.encode("utf-8"),
+            stored_password.encode("utf-8")
+        )
+        print("PASSWORD MATCH:", password_match)
+
+        if not password_match:
+            return jsonify({
+                "success": False,
+                "message": "Invalid password"
+            }), 401
+
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "user": {
+                "name": user.get("name", ""),
+                "email": user.get("email", ""),
+                "role": user.get("role", "user")
+            }
+        }), 200
+
+    except Exception as e:
+        print("LOGIN ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500, 200
+
+    try:
+        data = request.json
+        email = data.get("email", "").strip().lower()
+        password = data.get("password")
+
+        user = users_collection.find_one({"email": email})
+
+        if not user:
+            return jsonify({"success": False, "message": "User not found"}), 401
+
+        if not user.get('password'):
+            return jsonify({"success": False, "message": "Invalid user account"}), 401
+
+        if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+            return jsonify({
+                "success": True,
+                "user": {
+                    "name": user.get("name"),
+                    "email": user.get("email"),
+                    "role": user.get("role", "user")
+                }
+            }), 200
+        else:
+            return jsonify({"success": False, "message": "Invalid password"}), 401
+            
+    except Exception as e:
+        print("Login Error:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500, 200
 
     data = request.json
 
-    email = data.get("email")
+    email = data.get("email", "").strip().lower()
     password = data.get("password")
 
     user = users_collection.find_one({
@@ -159,7 +297,7 @@ def test():
         "message": "MongoDB Connected Successfully"
     })
 
-@app.route('/api/users', methods=['POST', 'OPTIONS'])
+@app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def create_user():
 
     data = request.json
@@ -182,7 +320,7 @@ def create_user():
         "inserted_id": str(result.inserted_id)
     })
 
-@app.route('/api/users', methods=['GET'])
+@app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def get_users():
     try:
         users = list(users_collection.find({}, {
@@ -205,7 +343,7 @@ def get_users():
         }), 500
 
 
-@app.route('/api/users/<id>', methods=['DELETE', 'POST', 'GET', 'OPTIONS'])
+@app.route('/api/users/<id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def delete_user(id):
 
     users_collection.delete_one({
@@ -421,7 +559,7 @@ def delete_analytics(id):
 # RECOMMENDATIONS API
 # ─────────────────────────────────────
 
-@app.route('/api/recommendations', methods=['GET', 'OPTIONS'])
+@app.route('/api/recommendations', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def get_recommendations():
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
@@ -492,7 +630,7 @@ def get_recommendations():
 # PLATFORM HEALTH API
 # ─────────────────────────────────────
 
-@app.route('/api/platform-health', methods=['GET', 'OPTIONS'])
+@app.route('/api/platform-health', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def get_platform_health():
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
@@ -553,7 +691,7 @@ def get_platform_health():
 # REPORTS API
 # ─────────────────────────────────────
 
-@app.route('/api/reports', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/reports', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def manage_reports():
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
@@ -679,7 +817,7 @@ def delete_report(report_id):
 # SETTINGS API
 # ─────────────────────────────────────
 
-@app.route('/api/settings', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/settings', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def manage_settings():
     import datetime
     if request.method == 'OPTIONS':
@@ -737,7 +875,7 @@ def manage_settings():
         print("SETTINGS API ERROR:", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/settings/<setting_id>', methods=['PUT', 'OPTIONS'])
+@app.route('/api/settings/<setting_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def update_setting(setting_id):
     import datetime
     if request.method == 'OPTIONS':
@@ -1074,18 +1212,20 @@ def sales_forecast():
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL 02.5 – Startup Analyzer (AI Simulated)
 # ══════════════════════════════════════════════════════════════════════════════
-@app.route('/api/startup/analyze', methods=['POST', 'GET', 'OPTIONS'])
-def analyze_startup():
+@app.route('/api/forecast-analysis', methods=['POST'])
+def forecast_analysis():
     try:
         data = request.json
+        print("FORECAST REQUEST RECEIVED")
+        print(data)
 
-        startup_name = data.get('startup_name', 'Unknown Startup')
-        domain = data.get('domain', 'General')
+        startup_name = data.get('startup_name', '')
+        domain = data.get('domain', '')
         target_audience = data.get('target_audience', '')
-        investment = float(data.get('investment', 0))
-        monthly_budget = float(data.get('monthly_budget', 0))
-        expected_customers = float(data.get('expected_customers', 0))
-        marketing_spend = float(data.get('marketing_spend', 0))
+        investment = float(data.get('investment', 0) or 0)
+        monthly_budget = float(data.get('monthly_budget', 0) or 0)
+        expected_customers = int(data.get('expected_customers', 0) or 0)
+        marketing_spend = float(data.get('marketing_spend', 0) or 0)
         competitor_level = data.get('competitor_level', 'Medium')
         market_region = data.get('market_region', 'Global')
         pricing_model = data.get('pricing_model', 'Subscription')
@@ -1141,7 +1281,7 @@ def analyze_startup():
                 "upper": round(val * 1.15, 2),
             })
 
-        return jsonify({
+        response_payload = {
             "success": True,
             "startup_name": startup_name,
             "domain": domain,
@@ -1152,9 +1292,34 @@ def analyze_startup():
             "market_fit": market_fit,
             "recommendations": recommendations,
             "forecast": forecast
-        })
+        }
+
+        # Save to MongoDB
+        from datetime import datetime
+        forecast_doc = {
+            "user_email": data.get("user_email", "founder@startup.com"),
+            "startup_name": startup_name,
+            "business_domain": domain,
+            "initial_investment": investment,
+            "expected_customers": expected_customers,
+            "predicted_revenue": round(float(predicted_revenue), 2),
+            "growth_rate": round(float(growth_score), 1),
+            "confidence_level": round(float(growth_score * 0.9), 1),
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        try:
+            from db import forecasts_collection
+            result = forecasts_collection.insert_one(forecast_doc)
+            print("FORECAST SAVED:", result.inserted_id)
+        except Exception as db_e:
+            print("Failed to save forecast to MongoDB:", db_e)
+
+        return jsonify(response_payload)
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({
             "success": False,
             "error": str(e)
@@ -1547,7 +1712,7 @@ def health():
     return jsonify({"status": "ok", "models_loaded": list(_cache.keys())})
 
 
-@app.route('/api/dashboard', methods=['GET', 'OPTIONS'])
+@app.route('/api/dashboard', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def get_dashboard():
     if request.method == 'OPTIONS':
         return jsonify({'success': True}), 200
@@ -1596,5 +1761,357 @@ def get_dashboard():
         print("Error in /dashboard:", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+
+@app.route("/api/user-dashboard/<email>", methods=["GET", "OPTIONS"])
+def get_user_dashboard(email):
+
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+
+    try:
+        from db import (
+            users_collection,
+            user_analytics_collection,
+            analytics_collection,
+            campaigns_collection,
+            forecasts_collection,
+            recommendations_collection,
+            activity_logs_collection
+        )
+
+        # 1. User
+        user = users_collection.find_one({"email": email})
+        user = {k: v for k, v in user.items() if k != "_id"} if user else {}
+
+        # 2. User Dashboard Analytics
+        dashboard = user_analytics_collection.find_one({"user_email": email})
+        if not dashboard:
+            # Fallback safe defaults if empty
+            dashboard = {
+                "user_email": email,
+                "workspace": "VenturX Workspace",
+                "total_revenue": 1250000,
+                "active_subscriptions": 150,
+                "ai_confidence": 92,
+                "marketing_roi": 12.5,
+                "retention_rate": 95,
+                "growth_chart": [10, 20, 35, 55, 80, 100],
+                "client_growth": [5, 10, 25, 40, 60, 85],
+                "ai_insights": ["Strong growth trajectory detected."],
+                "traffic_sources": {"organic": 40, "social": 25, "direct": 15, "referral": 10, "paid": 10},
+                "top_performing_pages": [
+                    { "path": "/", "views": 45020, "bounce": 32, "time": 145, "conv": 4.2 },
+                    { "path": "/pricing", "views": 28400, "bounce": 45, "time": 90, "conv": 8.5 },
+                    { "path": "/blog", "views": 19200, "bounce": 65, "time": 210, "conv": 1.2 }
+                ]
+            }
+        else:
+            dashboard["_id"] = str(dashboard["_id"])
+
+        # 3. Global Analytics
+        analytics = analytics_collection.find_one({})
+        if analytics and "_id" in analytics:
+            analytics["_id"] = str(analytics["_id"])
+        else:
+            analytics = {}
+
+        # 4. Campaigns
+        campaigns = list(campaigns_collection.find({}))
+        for c in campaigns:
+            c["_id"] = str(c["_id"])
+
+        # 5. Forecasts
+        forecasts = list(forecasts_collection.find({}))
+        for f in forecasts:
+            f["_id"] = str(f["_id"])
+
+        # 6. Recommendations
+        recommendations = list(recommendations_collection.find({}))
+        for r in recommendations:
+            r["_id"] = str(r["_id"])
+
+        # 7. Activity Logs
+        activity_logs = list(activity_logs_collection.find({}))
+        for a in activity_logs:
+            a["_id"] = str(a["_id"])
+
+        # Fetch raw user_analytics as a list without _id
+        user_analytics = list(
+            user_analytics_collection.find(
+                {"user_email": email},
+                {"_id": 0}
+            )
+        )
+
+        # 8. Safe CRM Defaults (Since we don't have a CRM collection)
+        crm = [
+            {
+                "id": "crm_001",
+                "startupName": dashboard.get("workspace", "Your Startup"),
+                "fullName": user.get("name", "Founder"),
+                "email": email,
+                "subscriptionPlan": "enterprise",
+                "activityLevel": "Highly Active",
+                "status": "Active User",
+                "forecastsCreated": len(forecasts),
+                "campaignsCreated": len(campaigns),
+                "retention": dashboard.get("retention_rate", 90),
+                "lastActive": dashboard.get("updated_at", "2026-05-27")
+            }
+        ]
+
+        unified_payload = {
+            "success": True,
+            "user": user,
+            "dashboard": dashboard,
+            "analytics": analytics,
+            "crm": crm,
+            "campaigns": campaigns,
+            "forecasts": forecasts,
+            "recommendations": recommendations,
+            "activity_logs": activity_logs,
+            "user_analytics": user_analytics
+        }
+
+        return jsonify(unified_payload), 200
+
+    except Exception as e:
+        print("USER DASHBOARD ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CRM – Add Startup
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route('/api/crm/add-startup', methods=['POST', 'OPTIONS'])
+def add_crm_startup():
+
+    print("CRM ROUTE HIT")
+
+    if request.method == 'OPTIONS':
+        return jsonify({
+            "success": True
+        }), 200
+
+    try:
+
+        data = request.get_json()
+
+        print("CRM DATA RECEIVED:", data)
+
+        crm_doc = {
+            "founder_name": data.get("founder_name"),
+            "email": data.get("email"),
+            "startup_name": data.get("startup_name"),
+            "industry": data.get("industry"),
+            "subscription_plan": data.get("subscription_plan"),
+            "activity_level": data.get("activity_level"),
+            "lifecycle_stage": data.get("lifecycle_stage"),
+            "forecasts_created": data.get("forecasts_created"),
+            "admin_notes": data.get("admin_notes"),
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        inserted = crm_collection.insert_one(crm_doc)
+
+        print("CRM INSERTED:", inserted.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "message": "Startup added successfully",
+            "inserted_id": str(inserted.inserted_id)
+        })
+
+    except Exception as e:
+
+        print("CRM BACKEND ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/segmentation/save', methods=['POST', 'OPTIONS'])
+def save_segmentation():
+
+    print("SEGMENTATION ROUTE HIT")
+
+    if request.method == 'OPTIONS':
+        return jsonify({
+            "success": True
+        }), 200
+
+    try:
+
+        data = request.get_json()
+
+        print("SEGMENTATION DATA:", data)
+
+        segmentation_doc = {
+
+            "user_email": data.get("user_email"),
+
+            "summary": {
+                "total_customers": data.get("total_customers"),
+                "silhouette_score": data.get("silhouette_score"),
+                "segments_count": data.get("segments_count"),
+                "algorithm": data.get("algorithm")
+            },
+
+            "segments": data.get("segments"),
+
+            "recommendations": data.get("recommendations"),
+
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        inserted = segmentation_collection.insert_one(segmentation_doc)
+
+        print("SEGMENTATION INSERTED:", inserted.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "message": "Segmentation saved successfully",
+            "inserted_id": str(inserted.inserted_id)
+        })
+
+    except Exception as e:
+
+        print("SEGMENTATION ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/contenthub/save', methods=['POST', 'OPTIONS'])
+def save_contenthub():
+
+    print("CONTENT HUB ROUTE HIT")
+
+    if request.method == 'OPTIONS':
+        return jsonify({
+            "success": True
+        }), 200
+
+    try:
+
+        data = request.get_json()
+
+        print("CONTENT HUB DATA:", data)
+
+        content_doc = {
+
+            "content_type": data.get("content_type"),
+
+            "tone_of_voice": data.get("tone_of_voice"),
+
+            "target_audience": data.get("target_audience"),
+
+            "prompt_topic": data.get("prompt_topic"),
+
+            "keywords": data.get("keywords"),
+
+            "generated_content": data.get("generated_content"),
+
+            "engagement_probability": data.get("engagement_probability"),
+
+            "readability_score": data.get("readability_score"),
+
+            "seo_score": data.get("seo_score"),
+
+            "scheduled_platform": data.get("scheduled_platform"),
+
+            "scheduled_date": data.get("scheduled_date"),
+
+            "draft_status": data.get("draft_status", "draft"),
+
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        inserted = contenthub_collection.insert_one(content_doc)
+
+        print("CONTENT SAVED:", inserted.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "message": "Content saved successfully",
+            "inserted_id": str(inserted.inserted_id)
+        })
+
+    except Exception as e:
+
+        print("CONTENT HUB ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/branding/save', methods=['POST', 'OPTIONS'])
+def save_branding():
+
+    print("BRANDING ROUTE HIT")
+
+    if request.method == 'OPTIONS':
+        return jsonify({
+            "success": True
+        }), 200
+
+    try:
+
+        data = request.get_json()
+
+        print("BRANDING DATA:", data)
+
+        branding_doc = {
+
+            "startup_description": data.get("startup_description"),
+
+            "industry": data.get("industry"),
+
+            "target_audience": data.get("target_audience"),
+
+            "brand_vibe": data.get("brand_vibe"),
+
+            "primary_color": data.get("primary_color"),
+
+            "generated_logo": data.get("generated_logo"),
+
+            "brand_kit": data.get("brand_kit"),
+
+            "saved_identity_name": data.get("saved_identity_name"),
+
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        inserted = branding_collection.insert_one(branding_doc)
+
+        print("BRANDING SAVED:", inserted.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "message": "Brand identity saved successfully",
+            "inserted_id": str(inserted.inserted_id)
+        })
+
+    except Exception as e:
+
+        print("BRANDING ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+if __name__ == '__main__':
+
+
+
+    print(" Starting AI Models & Dashboard Aggregation API on port 5000...")
+    app.run(debug=True, port=5000)

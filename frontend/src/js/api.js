@@ -3,7 +3,7 @@
  * Handles all communication with the Express API / Python ML Microservice
  */
 
-const API_BASE_URL = window.location.origin;
+const API_BASE = "http://127.0.0.1:5000";
 
 // Request timeout configuration
 const TIMEOUT = 60000;
@@ -16,7 +16,7 @@ async function apiRequest(endpoint, options = {}) {
  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
  
  try {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
    ...options,
    signal: controller.signal,
@@ -28,13 +28,20 @@ async function apiRequest(endpoint, options = {}) {
   clearTimeout(timeoutId);
   
   if (!response.ok) {
-   throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+   const err = new Error(`HTTP ${response.status}: ${response.statusText}`);
+   err.response = response;
+   throw err;
   }
   
   return await response.json();
  } catch (error) {
   clearTimeout(timeoutId);
-  console.error(`API Error (${endpoint}):`, error);
+  console.error("FULL API ERROR:", error);
+  if (error.response && typeof error.response.text === 'function') {
+      try {
+          console.error("ERROR RESPONSE:", await error.response.text());
+      } catch(e) {}
+  }
   throw error;
  }
 }
@@ -56,6 +63,12 @@ const HealthAPI = {
 const SegmentationAPI = {
  async getSegments() {
   return apiRequest('/api/segmentation');
+ },
+ async saveSegmentation(payload) {
+  return await apiRequest('/api/segmentation/save', {
+   method: 'POST',
+   body: JSON.stringify(payload)
+  });
  }
 };
 
@@ -67,10 +80,13 @@ const ForecastingAPI = {
  async getSalesForecast(periods = 90) {
   return apiRequest(`/api/forecast/sales?periods=${periods}`);
  },
- async analyzeStartup(data) {
-  return apiRequest('/api/startup/analyze', {
+ async analyzeStartup(payload) {
+  return apiRequest('/api/forecast-analysis', {
    method: 'POST',
-   body: JSON.stringify(data)
+   headers: {
+    'Content-Type': 'application/json'
+   },
+   body: JSON.stringify(payload)
   });
  }
 };
@@ -113,11 +129,26 @@ const FinancialAPI = {
 // MODEL 05 - Recommendation Engine
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const RecommendationAPI = {
- async getRecommendations(customerId, topN = 3) {
-  return apiRequest(`/api/recommendations/${customerId}?top_n=${topN}`);
- }
-};
+ const RecommendationAPI = {
+  async getRecommendations(customerId, topN = 3) {
+   return apiRequest(`/api/recommendations/${customerId}?top_n=${topN}`);
+  }
+ };
+ 
+ // ═══════════════════════════════════════════════════════════════════════════════
+ // CRM Module
+ // ═══════════════════════════════════════════════════════════════════════════════
+ 
+ const CRMAPI = {
+  addCRMStartup: (payload) =>
+    apiRequest('/api/crm/add-startup', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    }),
+ };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODEL 06 - Workflow Optimization
@@ -229,5 +260,6 @@ window.API = {
  Workflow: WorkflowAPI,
  Dashboard: DashboardAPI,
  Evaluation: EvaluationAPI,
- Utils: Utils
+ Utils: Utils,
+ CRM: CRMAPI
 };

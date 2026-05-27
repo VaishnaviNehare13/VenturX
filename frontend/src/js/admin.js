@@ -14,7 +14,7 @@ window.AdminUI = {
     if(!root) return;
     
     // Clear root first to prevent duplication
-    root.innerHTML = '';
+    if (root) root.innerHTML = '';
     
     if (type === 'modal') {
       root.className = 'admin-overlay-root modal-mode';
@@ -32,7 +32,7 @@ window.AdminUI = {
       `;
     } else {
       root.className = 'admin-overlay-root';
-      root.innerHTML = `
+      if (root) root.innerHTML = `
         <div class="admin-backdrop" onclick="window.closeAdminOverlay()"></div>
         <div class="admin-drawer" style="transform:translateX(0);">
           <div class="admin-drawer-header">
@@ -606,7 +606,7 @@ window.initAdminDashboard = function() {
         ];
       }
       const newDiv = document.createElement('div');
-      newDiv.innerHTML = msgs[Math.floor(Math.random() * msgs.length)];
+      if (newDiv) newDiv.innerHTML = msgs[Math.floor(Math.random() * msgs.length)];
       newDiv.classList.add('admin-anim-slide-down');
       terminal.prepend(newDiv);
       if (terminal.children.length > 20) {
@@ -679,7 +679,7 @@ function renderAdminTab(tab, container, force = false) {
         console.log("Users HTML Generated");
         console.log(usersHTML.substring(0, 50) + "...");
         console.log(container);
-        container.innerHTML = usersHTML; 
+        if (container) container.innerHTML = usersHTML; 
         bindUserEvents(); 
         break;
       case 'subscriptions': container.innerHTML = getSubscriptionsHTML(); bindSubscriptionEvents(); break;
