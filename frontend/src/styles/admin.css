@@ -93,6 +93,9 @@ html, body, #app {
 
 /* Sidebar Components */
 .admin-brand {
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   height: 70px;
   display: flex;
   align-items: center;
@@ -839,7 +842,8 @@ html, body, #app {
      h e i g h t :   3 2 0 p x ; 
      w i d t h :   1 0 0 % ; 
  } 
-  
+ 
+ 
  
 /* --- DENSITY UPGRADE STYLES --- */
 .admin-card-compact {
@@ -914,4 +918,10 @@ html, body, #app {
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+
+.admin-brand:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
 }

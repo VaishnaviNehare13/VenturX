@@ -298,44 +298,42 @@ def test():
         "message": "MongoDB Connected Successfully"
     })
 
-@app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-def create_user():
+@app.route('/api/users', methods=['GET', 'POST', 'OPTIONS'])
+def handle_users():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
 
-    data = request.json
-
-    user = {
-        "name": data.get("name"),
-        "email": data.get("email"),
-        "company": data.get("company"),
-        "plan": data.get("plan"),
-        "revenue": data.get("revenue"),
-        "ai_engagement": data.get("ai_engagement"),
-        "churn_risk": data.get("churn_risk"),
-        "status": data.get("status")
-    }
-
-    result = users_collection.insert_one(user)
-
-    return jsonify({
-        "success": True,
-        "inserted_id": str(result.inserted_id)
-    })
-
-@app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-def get_users():
     try:
-        users = list(users_collection.find({}, {
-            "password": 0
-        }))
+        data = request.get_json(silent=True) or {}
+        
+        if request.method == 'POST':
+            user = {
+                "name": data.get("name"),
+                "email": data.get("email"),
+                "company": data.get("company"),
+                "plan": data.get("plan"),
+                "revenue": data.get("revenue"),
+                "ai_engagement": data.get("ai_engagement"),
+                "churn_risk": data.get("churn_risk"),
+                "status": data.get("status")
+            }
+            result = users_collection.insert_one(user)
+            return jsonify({
+                "success": True,
+                "inserted_id": str(result.inserted_id)
+            })
 
-        for user in users:
-            user["_id"] = str(user["_id"])
-
-        print("USERS API HIT")
-        print("TOTAL USERS:", len(users))
-
-        return jsonify(users), 200
-
+        if request.method == 'GET':
+            print("Users API Hit Successfully")
+            users = list(users_collection.find({}, {"password": 0}))
+            for user in users:
+                user["_id"] = str(user["_id"])
+                
+            return jsonify({
+                "success": True,
+                "users": users
+            })
+            
     except Exception as e:
         print("USERS API ERROR:", str(e))
         return jsonify({

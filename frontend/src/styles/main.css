@@ -304,6 +304,9 @@ tbody tr:hover { background: rgba(99,102,241,0.05); }
 
 /* Sidebar nav */
 .logo {
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   display: flex; 
   align-items: center; 
   gap: 12px; 
@@ -793,3 +796,9 @@ tbody tr:hover { background: rgba(99,102,241,0.05); }
 .text-red-500 { color: #ef4444; }
 .text-blue-500 { color: #3b82f6; }
 .text-purple-500 { color: #8b5cf6; }
+
+
+.logo:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
