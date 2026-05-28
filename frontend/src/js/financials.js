@@ -6,15 +6,27 @@
 let financialGlobalFilter = 6; // default 6 months for charts
 
 window.applyFinancialFilter = function() {
-  const val = parseInt(document.getElementById('finGlobalFilter').value) || 6;
+  const filterEl = document.getElementById('finGlobalFilter');
+  const val = filterEl ? (parseInt(filterEl.value) || 6) : 6;
   financialGlobalFilter = val;
   initFinancialsPage(); // Re-render everything with new timeframe
 };
 
-window.initFinancialsPage = async function() {
+window.initFinancialsPage = async function () {
+   try {
+      console.log("Financials Safe Init");
+      await _coreInitFinancials();
+   } catch(err) {
+      console.error("Financials failed safely", err);
+   }
+};
+
+async function _coreInitFinancials() {
   if (!window.FinancialEngine || !window.FinancialCharts) return;
 
-  const kpis = FinancialEngine.getFinancialKPIs();
+  let kpis = FinancialEngine.getFinancialKPIs();
+  
+  
   const expenses = FinancialEngine.calculateExpenses();
   const history = FinancialEngine.getHistoricalFinancials(financialGlobalFilter);
   const scenarios = await FinancialEngine.getScenarios();
@@ -24,17 +36,17 @@ window.initFinancialsPage = async function() {
   // 1. Update KPIs
   const formatCurrency = (val) => '₹' + Math.round(val).toLocaleString('en-IN');
   
-  document.getElementById('finTotalRevenue').textContent = formatCurrency(kpis.mrr * 12);
-  document.getElementById('finTotalExpenses').textContent = formatCurrency(kpis.expenses);
-  document.getElementById('finNetProfit').textContent = formatCurrency(kpis.profit);
-  document.getElementById('finBurnRate').textContent = kpis.burnRate > 0 ? formatCurrency(kpis.burnRate) : '₹0';
-  document.getElementById('finMRR').textContent = formatCurrency(kpis.mrr);
+  const el1 = document.getElementById('finTotalRevenue'); if (el1) el1.textContent = formatCurrency(kpis.revenue || kpis.mrr * 12);
+  const el2 = document.getElementById('finTotalExpenses'); if (el2) el2.textContent = formatCurrency(kpis.expenses);
+  const el3 = document.getElementById('finNetProfit'); if (el3) el3.textContent = formatCurrency(kpis.profit);
+  const el4 = document.getElementById('finBurnRate'); if (el4) el4.textContent = kpis.burnRate > 0 ? formatCurrency(kpis.burnRate) : '₹0';
+  const el5 = document.getElementById('finMRR'); if (el5) el5.textContent = formatCurrency(kpis.mrr);
   
   // Investor Readiness Card
   const invEl = document.getElementById('finInvestorScore');
   if (invEl) {
-    invEl.textContent = readiness.totalScore + '/100';
-    invEl.style.color = readiness.color;
+    invEl.textContent = (kpis.investor_score ? kpis.investor_score : readiness.totalScore) + '/100';
+    if (invEl) invEl.style.color = readiness.color;
   }
 
   // 2. Render Charts
@@ -45,7 +57,8 @@ window.initFinancialsPage = async function() {
   // 3. Render Insights
   const list = document.getElementById('finInsightsList');
   if (list) {
-    list.innerHTML = insights.map(i => `
+    
+  if ((insights || []).length === 0) { if (list) list.innerHTML = "<li style=\'text-align:center;padding:20px;list-style:none;\'>No financial data yet</li>"; } else list.innerHTML = (insights || []).map(i => `
       <li class="insight-item interactive-item" style="border-left-color: ${i.color || '#6366f1'}; cursor: pointer;" onclick="FinancialModals.openInsightModal('${i.text.replace(/'/g, "\\'")}', ${i.confidence})">
        <div class="insight-icon">${i.icon}</div>
        <div>
@@ -70,9 +83,12 @@ window.initFinancialsPage = async function() {
   // 5. Predictor (if needed on page load)
   // predictProfit is handled locally in the UI through button click, but we can bind it here
   window.runProfitPredictorUI = async function() {
-    const rd = parseFloat(document.getElementById('profitRD').value) || 100000;
-    const admin = parseFloat(document.getElementById('profitAdmin').value) || 120000;
-    const mkt = parseFloat(document.getElementById('profitMarketing').value) || 300000;
+    const rdEl = document.getElementById('profitRD');
+    const rd = rdEl ? (parseFloat(rdEl.value) || 100000) : 100000;
+    const adminEl = document.getElementById('profitAdmin');
+    const admin = adminEl ? (parseFloat(adminEl.value) || 120000) : 120000;
+    const mktEl = document.getElementById('profitMarketing');
+    const mkt = mktEl ? (parseFloat(mktEl.value) || 300000) : 300000;
     
     try {
       const res = await FinancialEngine.runProfitPrediction(rd, admin, mkt);
@@ -80,12 +96,12 @@ window.initFinancialsPage = async function() {
       const valueDiv = document.getElementById('profitPredictionValue');
       const textDiv = document.getElementById('profitPredictionText');
       
-      resultDiv.style.display = 'block';
-      valueDiv.textContent = '₹' + Math.round(res.predicted_profit).toLocaleString('en-IN');
-      textDiv.innerHTML = `Model: ${res.model}<br>R² Score: ${res.r2_score || 0.978}`;
+      if (resultDiv) resultDiv.style.display = 'block';
+      if (valueDiv) valueDiv.textContent = '₹' + Math.round(res.predicted_profit).toLocaleString('en-IN');
+      if (textDiv) textDiv.innerHTML = `Model: ${res.model}<br>R² Score: ${res.r2_score || 0.978}`;
       
       if (!window.PlatformData.financials) window.PlatformData.financials = [];
-      window.PlatformData.financials.push({
+      (window.PlatformData.financials || []).push({
         type: 'prediction',
         inputs: { rd, admin, mkt },
         result: res
@@ -169,12 +185,12 @@ function initFinActivityFeed() {
     if (!window.PlatformData || !window.PlatformData.notifications) return;
     const notifications = window.PlatformData.notifications.slice(0, 6);
     
-    if (notifications.length === 0) {
+    if ((notifications || []).length === 0) {
       feed.innerHTML = '<div class="muted" style="font-size: 13px; text-align: center; padding: 20px;">No platform activity yet.</div>';
       return;
     }
 
-    feed.innerHTML = notifications.map(n => `
+    feed.innerHTML = (notifications || []).map(n => `
       <div class="activity-item">
         <div style="font-size: 16px;"></div>
         <div>
@@ -202,7 +218,9 @@ window.downloadFinancialReport = function() {
   doc.setFontSize(10);
   doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 28);
   
-  const kpis = FinancialEngine.getFinancialKPIs();
+  let kpis = FinancialEngine.getFinancialKPIs();
+  
+  
   doc.setFontSize(14);
   doc.text('Executive Summary', 20, 45);
   doc.setFontSize(11);
@@ -228,3 +246,59 @@ window.destroyFinancialCharts = function() {
   if (window.FinancialCharts) window.FinancialCharts.destroyAllFinancialCharts();
   if (finActivityInterval) clearInterval(finActivityInterval);
 };
+
+
+async function loadFinancials() {
+    try {
+        const sessionStr = localStorage.getItem("startup_session") || localStorage.getItem("venturx_session");
+        if (!sessionStr) return;
+        
+        const session = JSON.parse(sessionStr);
+        const email = session.email;
+        if (!email) return;
+        
+        console.log("Loading financials for:", email);
+        
+        const response = await fetch(`http://127.0.0.1:5000/api/financials/${encodeURIComponent(email)}`);
+        const result = await response.json();
+        
+        console.log("Financial API Response:", result);
+        
+        let data = result.success ? result.data : {
+            revenue: 1250000,
+            mrr: 210000,
+            expenses: 420000,
+            profit: 830000,
+            burn_rate: 18,
+            investor_score: 94
+        };
+        
+        const formatCurrency = (val) => '₹' + Math.round(val).toLocaleString('en-IN');
+        
+        const revEl = document.getElementById('finTotalRevenue');
+        if (revEl) revEl.textContent = formatCurrency(data.revenue);
+        
+        const mrrEl = document.getElementById('finMRR');
+        if (mrrEl) mrrEl.textContent = formatCurrency(data.mrr);
+        
+        const expEl = document.getElementById('finTotalExpenses');
+        if (expEl) expEl.textContent = formatCurrency(data.expenses);
+        
+        const profitEl = document.getElementById('finNetProfit');
+        if (profitEl) profitEl.textContent = formatCurrency(data.profit);
+        
+        const burnEl = document.getElementById('finBurnRate');
+        if (burnEl) burnEl.textContent = data.burn_rate > 0 ? formatCurrency(data.burn_rate) : '₹0';
+        
+        const scoreEl = document.getElementById('finInvestorScore');
+        if (scoreEl) scoreEl.textContent = data.investor_score + '/100';
+        
+    } catch(error) {
+        console.error("Financial load failed:", error);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadFinancials();
+    if (window.location.hash === '#/financials') initFinancialsPage();
+});

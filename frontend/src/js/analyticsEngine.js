@@ -29,13 +29,13 @@ const AnalyticsEngine = (() => {
   let totalBudget = 0;
   let totalSuccess = 0;
   
-  campaigns.forEach(c => {
+  (campaigns || []).forEach(c => {
    totalLeads += parseInt(c.expectedLeads) || 0;
    totalBudget += parseFloat(c.budget) || 0;
    totalSuccess += parseFloat(c.successRate) || 0;
   });
 
-  const avgSuccess = campaigns.length > 0 ? (totalSuccess / campaigns.length) : 0;
+  const avgSuccess = (campaigns || []).length > 0 ? (totalSuccess / (campaigns || []).length) : 0;
   const avgROI = Number(dash.marketing_roi || 0);
   const reach = Number(dash.marketing_reach || 0);
   
@@ -45,16 +45,16 @@ const AnalyticsEngine = (() => {
  function getContentData() {
   const pde = window.PlatformDataEngine;
   if (!pde) return { draftsCount: 0, scheduledCount: 0 };
-  const aiUsage = pde.getData().aiUsage.filter(a => a.module === 'content');
-  return { draftsCount: aiUsage.length, scheduledCount: 0 };
+  const aiUsage = (pde.getData().aiUsage || []).filter(a => a.module === 'content');
+  return { draftsCount: (aiUsage || []).length, scheduledCount: 0 };
  }
 
  function getBrandingData() {
   const pde = window.PlatformDataEngine;
   if (!pde) return { hasBrand: false, brandName: null };
   const brands = pde.getData().branding;
-  const hasBrand = brands.length > 0;
-  return { hasBrand, brandName: hasBrand ? brands[brands.length-1].startupName : null };
+  const hasBrand = (brands || []).length > 0;
+  return { hasBrand, brandName: hasBrand ? brands[(brands || []).length-1].startupName : null };
  }
 
  async function getForecastingData() {
@@ -63,9 +63,9 @@ const AnalyticsEngine = (() => {
     return await window.API.Forecasting.getSalesForecast(90);
    }
   } catch (e) {
-   console.warn("Forecast API failed, returning null", e);
+   console.warn("Forecast API failed safely", e);
   }
-  return null; // Let UI handle fallback
+  return []; // Let UI handle fallback
  }
 
  async function getSegmentationData() {
@@ -107,38 +107,38 @@ const AnalyticsEngine = (() => {
   
   if (crm.totalUsers > 0) {
    if (crm.retention > 80) {
-    insights.push({ icon: '<i data-lucide="flame" class="icon-sm text-red-500"></i>', text: `Strong customer retention detected: <strong>${crm.retention.toFixed(1)}%</strong>.`, time: 'Just now', color: '#10b981' });
+    (insights || []).push({ icon: '<i data-lucide="flame" class="icon-sm text-red-500"></i>', text: `Strong customer retention detected: <strong>${crm.retention.toFixed(1)}%</strong>.`, time: 'Just now', color: '#10b981' });
    } else {
-    insights.push({ icon: '<i data-lucide="alert-triangle" class="icon-sm text-amber-500"></i>', text: `Churn risk detected. Retention is below threshold at <strong>${crm.retention.toFixed(1)}%</strong>.`, time: '1 hour ago', color: '#ef4444' });
+    (insights || []).push({ icon: '<i data-lucide="alert-triangle" class="icon-sm text-amber-500"></i>', text: `Churn risk detected. Retention is below threshold at <strong>${crm.retention.toFixed(1)}%</strong>.`, time: '1 hour ago', color: '#ef4444' });
    }
   } else {
-   insights.push({ icon: '', text: `No CRM data found. Add users to unlock engagement insights.`, time: 'Just now', color: '#6366f1' });
+   (insights || []).push({ icon: '', text: `No CRM data found. Add users to unlock engagement insights.`, time: 'Just now', color: '#6366f1' });
   }
   
-  if (mkt.data.length > 0) {
+  if ((mkt.data || []).length > 0) {
    if (mkt.avgROI > 100) {
-    insights.push({ icon: '<i data-lucide="trending-up" class="icon-sm text-green-500"></i>', text: `Marketing campaigns show exceptional ROI averaging <strong>${mkt.avgROI.toFixed(1)}%</strong>.`, time: '2 hours ago', color: '#8b5cf6' });
+    (insights || []).push({ icon: '<i data-lucide="trending-up" class="icon-sm text-green-500"></i>', text: `Marketing campaigns show exceptional ROI averaging <strong>${mkt.avgROI.toFixed(1)}%</strong>.`, time: '2 hours ago', color: '#8b5cf6' });
    } else {
-    insights.push({ icon: '<i data-lucide="lightbulb" class="icon-sm text-amber-500"></i>', text: `Campaign ROI is underperforming. Recommend AI optimization.`, time: '3 hours ago', color: '#f59e0b' });
+    (insights || []).push({ icon: '<i data-lucide="lightbulb" class="icon-sm text-amber-500"></i>', text: `Campaign ROI is underperforming. Recommend AI optimization.`, time: '3 hours ago', color: '#f59e0b' });
    }
   }
   
   if (getContentData().draftsCount > 0) {
-   insights.push({ icon: '', text: `Content Hub activity increased. <strong>${getContentData().draftsCount}</strong> drafts in progress.`, time: '5 hours ago', color: '#22d3ee' });
+   (insights || []).push({ icon: '', text: `Content Hub activity increased. <strong>${getContentData().draftsCount}</strong> drafts in progress.`, time: '5 hours ago', color: '#22d3ee' });
   }
   
   if (getBrandingData().hasBrand) {
-   insights.push({ icon: '<i data-lucide="palette" class="icon-sm text-purple-500"></i>', text: `Branding Studio actively utilized by <strong>${getBrandingData().brandName}</strong>.`, time: '1 day ago', color: '#ec4899' });
+   (insights || []).push({ icon: '<i data-lucide="palette" class="icon-sm text-purple-500"></i>', text: `Branding Studio actively utilized by <strong>${getBrandingData().brandName}</strong>.`, time: '1 day ago', color: '#ec4899' });
   }
 
   // Fallbacks if not enough insights
-  if (insights.length < 3) {
-    insights.push({ icon: '<i data-lucide="bot" class="icon-sm text-purple-500"></i>', text: 'Forecasting model accuracy remains high post-retraining.', time: '1 day ago', color: '#10b981', confidence: 98 });
-    insights.push({ icon: '<i data-lucide="zap" class="icon-sm text-amber-500"></i>', text: 'Ecosystem health indicates strong readiness for scaling.', time: '2 days ago', color: '#6366f1', confidence: 92 });
+  if ((insights || []).length < 3) {
+    (insights || []).push({ icon: '<i data-lucide="bot" class="icon-sm text-purple-500"></i>', text: 'Forecasting model accuracy remains high post-retraining.', time: '1 day ago', color: '#10b981', confidence: 98 });
+    (insights || []).push({ icon: '<i data-lucide="zap" class="icon-sm text-amber-500"></i>', text: 'Ecosystem health indicates strong readiness for scaling.', time: '2 days ago', color: '#6366f1', confidence: 92 });
   }
 
   // Assign mock confidence scores
-  insights.forEach(i => {
+  (insights || []).forEach(i => {
     if (!i.confidence) i.confidence = Math.floor(Math.random() * 20) + 75; // 75-95%
   });
 
@@ -173,7 +173,7 @@ const AnalyticsEngine = (() => {
     
     if (metricName.includes('Retention')) val = getCRMData().retention || 80;
     
-    data.push({
+    (data || []).push({
      date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
      value: Math.round(val)
     });

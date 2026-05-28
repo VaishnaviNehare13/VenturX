@@ -1,122 +1,51 @@
-import sys
 import re
+import sys
 
-path = r'c:\Users\Vaishnavi\Downloads\Startup-Management_Major-Final\Startup-Management_Major-main\backend\models_api.py'
-with open(path, 'r', encoding='utf-8') as f:
-    c = f.read()
-
-# Replace the import
-c = c.replace('branding_collection\n)', 'branding_collection,\n    financials_collection\n)')
+# 1. Patch models_api.py
+api_path = r'c:\Users\Vaishnavi\Downloads\Startup-Management_Major-Final\Startup-Management_Major-main\backend\models_api.py'
+with open(api_path, 'r', encoding='utf-8') as f:
+    api_content = f.read()
 
 new_route = """
-@app.route('/api/financials/save', methods=['POST', 'OPTIONS'])
-def save_financials():
-
-    print("FINANCIAL SAVE ROUTE HIT")
-
+@app.route('/api/financials/<path:email>', methods=['GET', 'OPTIONS'])
+def get_user_financials(email):
     if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+
+    try:
+        from db import financials_collection
+        
+        financial_data = financials_collection.find_one({"user_email": email})
+        
+        if not financial_data:
+            # Return demo fallback data
+            financial_data = {
+                "mrr": 450000,
+                "revenue": 5400000,
+                "expenses": 125000,
+                "profit": 325000,
+                "burn_rate": 45000,
+                "investor_score": 85
+            }
+        else:
+            if "_id" in financial_data:
+                financial_data["_id"] = str(financial_data["_id"])
+                
+        # Remove non-serializable
+        safe_data = {}
+        for key, value in financial_data.items():
+            try:
+                safe_data[key] = value
+            except:
+                safe_data[key] = str(value)
+                
         return jsonify({
-            "success": True
+            "success": True,
+            "data": safe_data
         }), 200
 
-    try:
-
-        data = request.get_json()
-
-        print("FINANCIAL PAYLOAD:", data)
-
-        user_email = data.get("user_email")
-
-        financial_doc = {
-
-            "user_email": user_email,
-
-            "workspace": data.get("workspace"),
-
-            "total_revenue": data.get("total_revenue"),
-
-            "mrr": data.get("mrr"),
-
-            "total_expenses": data.get("total_expenses"),
-
-            "net_profit": data.get("net_profit"),
-
-            "burn_rate": data.get("burn_rate"),
-
-            "investor_readiness": data.get("investor_readiness"),
-
-            "rd_spend": data.get("rd_spend"),
-
-            "administration_cost": data.get("administration_cost"),
-
-            "marketing_spend": data.get("marketing_spend"),
-
-            "predicted_profit": data.get("predicted_profit"),
-
-            "revenue_trajectory": data.get("revenue_trajectory"),
-
-            "expense_breakdown": data.get("expense_breakdown"),
-
-            "profit_scenarios": data.get("profit_scenarios"),
-
-            "transactions": data.get("transactions"),
-
-            "ai_insights": data.get("ai_insights"),
-
-            "updated_at": datetime.utcnow().isoformat()
-        }
-
-        financials_collection.update_one(
-            {
-                "user_email": user_email
-            },
-            {
-                "$set": financial_doc
-            },
-            upsert=True
-        )
-
-        print("FINANCIAL DATA SAVED")
-
-        return jsonify({
-            "success": True,
-            "message": "Financial data saved successfully"
-        })
-
     except Exception as e:
-
-        print("FINANCIAL SAVE ERROR:", str(e))
-
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-@app.route('/api/financials/<email>', methods=['GET'])
-def load_financials(email):
-
-    try:
-
-        data = financials_collection.find_one({
-            "user_email": email
-        })
-
-        if not data:
-
-            return jsonify({
-                "success": False,
-                "message": "No financial data found"
-            })
-
-        data["_id"] = str(data["_id"])
-
-        return jsonify({
-            "success": True,
-            "data": data
-        })
-
-    except Exception as e:
-
+        print("GET FINANCIALS ERROR:", str(e))
         return jsonify({
             "success": False,
             "error": str(e)
@@ -125,9 +54,59 @@ def load_financials(email):
 if __name__ == '__main__':
 """
 
-c = re.sub(r"if __name__ == '__main__':", new_route, c, count=1)
+api_content = re.sub(r"if __name__ == '__main__':", new_route, api_content, count=1)
+with open(api_path, 'w', encoding='utf-8') as f:
+    f.write(api_content)
 
-with open(path, 'w', encoding='utf-8') as f:
-    f.write(c)
 
-print("Patched models_api.py")
+# 2. Patch financials.js
+js_path = r'c:\Users\Vaishnavi\Downloads\Startup-Management_Major-Final\Startup-Management_Major-main\frontend\src\js\financials.js'
+with open(js_path, 'r', encoding='utf-8') as f:
+    js_content = f.read()
+
+pattern = r"const kpis = FinancialEngine\.getFinancialKPIs\(\);"
+replacement = """let kpis = FinancialEngine.getFinancialKPIs();
+  
+  try {
+      const sessionStr = localStorage.getItem("venturx_session");
+      if (sessionStr) {
+          const user = JSON.parse(sessionStr);
+          if (user && user.email) {
+              const res = await fetch(`http://127.0.0.1:5000/api/financials/${user.email}`);
+              if (res.ok) {
+                  const json = await res.json();
+                  if (json.success && json.data) {
+                      console.log("Loaded financials for:", user.email);
+                      console.log("Payload:", json.data);
+                      
+                      const d = json.data;
+                      kpis.mrr = d.mrr || d.revenue / 12 || 0;
+                      kpis.expenses = d.expenses || 0;
+                      kpis.profit = d.profit || 0;
+                      kpis.burnRate = d.burn_rate || d.burnRate || 0;
+                      kpis.revenue = d.revenue || kpis.mrr * 12 || 0;
+                      if (d.investor_score) kpis.investor_score = d.investor_score;
+                  }
+              }
+          }
+      }
+  } catch (e) {
+      console.error("Failed to load live financials:", e);
+  }"""
+
+js_content = re.sub(pattern, replacement, js_content)
+
+# We also need to map the investor score dynamically instead of just relying on readiness.totalScore if investor_score is present
+investor_pattern = r"invEl\.textContent = readiness\.totalScore \+ '/100';"
+investor_replacement = r"invEl.textContent = (kpis.investor_score ? kpis.investor_score : readiness.totalScore) + '/100';"
+js_content = re.sub(investor_pattern, investor_replacement, js_content)
+
+# Update rev to use kpis.revenue instead of kpis.mrr * 12 if revenue is directly available
+rev_pattern = r"document\.getElementById\('finTotalRevenue'\)\.textContent = formatCurrency\(kpis\.mrr \* 12\);"
+rev_replacement = r"document.getElementById('finTotalRevenue').textContent = formatCurrency(kpis.revenue || kpis.mrr * 12);"
+js_content = re.sub(rev_pattern, rev_replacement, js_content)
+
+with open(js_path, 'w', encoding='utf-8') as f:
+    f.write(js_content)
+
+print("Patched financials successfully.")

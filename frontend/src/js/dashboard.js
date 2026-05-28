@@ -92,7 +92,7 @@ function startFeedScroll() {
 window.destroyDashboardCharts = function() {
     console.log("Destroying premium dashboard charts...");
     if (window.dashboardCharts) {
-        window.dashboardCharts.forEach(chart => {
+        (window.dashboardCharts || []).forEach(chart => {
             if (chart) chart.destroy();
         });
         window.dashboardCharts = [];
@@ -107,7 +107,7 @@ window.LiveMongoDashboard = {};
 // ---------------------------------------------------------
 function animateCounters() {
     const counters = document.querySelectorAll('.anim-counter');
-    counters.forEach(counter => {
+    (counters || []).forEach(counter => {
         const targetStr = counter.getAttribute('data-target');
         const target = parseFloat(targetStr);
         const prefix = counter.getAttribute('data-prefix') || '';
@@ -231,7 +231,7 @@ function renderPremiumChart() {
         }
     });
 
-    window.dashboardCharts.push(premiumMainChart);
+    (window.dashboardCharts || []).push(premiumMainChart);
 }
 
 window.switchChartTab = function(type, element) {
@@ -300,55 +300,10 @@ async function saveUserAnalytics() {
     }
 }
 
+
 async function loadLiveAnalytics() {
-    try {
-        const sessionStr = localStorage.getItem("venturx_session");
-        if (!sessionStr) return;
-        const user = JSON.parse(sessionStr);
-        if (!user || !user.email) return;
-
-        const response = await fetch(`http://127.0.0.1:5000/api/user_analytics/${user.email}`);
-        if (!response.ok) throw new Error("Analytics API error");
-        const json = await response.json();
-        
-        if (json.success && json.data) {
-            console.log("User Analytics Loaded", json.data);
-            const data = json.data;
-            
-            const revEl = document.querySelector('#kpi-detail-revenue')?.previousElementSibling?.querySelector('.anim-counter');
-        const subsEl = document.querySelector('#kpi-detail-subs')?.previousElementSibling?.querySelector('.anim-counter');
-        const aiEl = document.querySelector('#kpi-detail-ai')?.previousElementSibling?.querySelector('.anim-counter');
-        const roiEl = document.querySelector('#kpi-detail-roi')?.previousElementSibling?.querySelector('.anim-counter');
-            if (roiEl) roiEl.setAttribute('data-target', data.marketing_roi);
-
-            const retentionSpan = document.querySelector('#kpi-detail-subs div:nth-child(2) span:nth-child(2)');
-            if (retentionSpan) retentionSpan.innerText = (data.retention_rate) + '%';
-            
-            const churnSpan = document.querySelector('#kpi-detail-subs div:nth-child(1) span:nth-child(2)');
-            if (churnSpan) churnSpan.innerText = (100 - data.retention_rate).toFixed(1) + '% (Healthy)';
-            
-            if (data.growth_chart && Array.isArray(data.growth_chart)) {
-                chartDatasets.growth.data = data.growth_chart;
-            }
-            if (data.client_growth && Array.isArray(data.client_growth)) {
-                chartDatasets.clients.data = data.client_growth;
-            }
-        }
-    } catch (e) {
-        console.error("Failed to load user analytics:", e);
-    }
-    
-    requestAnimationFrame(() => {
-        animateCounters();
-    });
-
-    setTimeout(() => {
-        renderPremiumChart();
-        saveUserAnalytics();
-    }, 200);
+    // Deprecated. Logic moved to loadDashboard.
 }
-
-
 
 async function loadDashboard() {
     try {
@@ -359,133 +314,99 @@ async function loadDashboard() {
         const email = user.email;
         if (!email) return;
 
-        const response = await fetch(`http://127.0.0.1:5000/api/user-dashboard/${email}`);
+        console.log("Loading dashboard for:", email);
+
+        const response = await fetch(`http://127.0.0.1:5000/api/dashboard/${email}`);
         if (!response.ok) throw new Error("Dashboard API error");
         const json = await response.json();
         
-        if (json.success && json.dashboard) {
-            console.log("User Dashboard Loaded:", json.dashboard);
-            window.LiveMongoDashboard = json.dashboard;
-            renderDashboard();
+        if (json.success && json.data) {
+            console.log("Loaded dashboard for:", email);
+            const data = json.data;
+            window.LiveMongoDashboard = {
+      ...(data || {}),
+      financials: (data && data.financials) || [],
+      crm: (data && data.crm) || [],
+      customers: (data && data.customers) || [],
+      leads: (data && data.leads) || [],
+      campaigns: (data && data.campaigns) || [],
+      analytics: (data && data.analytics) || {},
+      metrics: (data && data.metrics) || {},
+      recommendations: (data && data.recommendations) || [],
+      segments: (data && data.segments) || [],
+      reports: (data && data.reports) || [],
+      growth_chart: (data && data.growth_chart) || [],
+      ai_insights: (data && data.ai_insights) || [],
+      subscriptions: (data && data.subscriptions) || []
+    };
+            
+            // Update Header
+            let workspaceName = data.workspace || data.startup_name || data.workspace_name || user.startup_name || user.company || (user.name ? user.name.split(' ')[0] + "'s HQ" : null);
+            
+            if (workspaceName === "Unknown Workspace") {
+                workspaceName = user.startup_name || user.company || (user.name ? user.name.split(' ')[0] + "'s HQ" : null);
+            }
+            
+            console.log("Workspace Loaded:", workspaceName);
+            
+            if (workspaceName && workspaceName !== "Unknown Workspace") {
+                const welcomeTitle = document.querySelector('.dash-header h1');
+                if (welcomeTitle) welcomeTitle.innerHTML = `Welcome back to ${workspaceName}`;
+                
+                const workspaceBadge = document.querySelector('.dash-header .status-pill:first-child');
+                if (workspaceBadge) workspaceBadge.innerHTML = `<i data-lucide="folder" style="width:12px; margin-right:4px;"></i> Workspace: ${workspaceName}`;
+                
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            // Update KPI Data Targets
+            const revEl = document.querySelector('#kpi-detail-revenue')?.previousElementSibling?.querySelector('.anim-counter');
+            if (revEl) revEl.setAttribute('data-target', data.revenue || 0);
+            
+            const subsEl = document.querySelector('#kpi-detail-subs')?.previousElementSibling?.querySelector('.anim-counter');
+            if (subsEl) subsEl.setAttribute('data-target', data.subscriptions || 0);
+            
+            const aiEl = document.querySelector('#kpi-detail-ai')?.previousElementSibling?.querySelector('.anim-counter');
+            if (aiEl) aiEl.setAttribute('data-target', data.ai_confidence || 0);
+            
+            const roiEl = document.querySelector('#kpi-detail-roi')?.previousElementSibling?.querySelector('.anim-counter');
+            if (roiEl) roiEl.setAttribute('data-target', data.marketing_roi || 0);
+
+            // Overwrite Growth History
+            if (data.growth_chart && Array.isArray(data.growth_chart) && (data.growth_chart || []).length > 0) {
+                chartDatasets.growth.data = data.growth_chart;
+            }
+
+            // Update AI Insights
+            const insightsList = document.querySelector('.insights-list');
+            if (insightsList && data.ai_insights && (data.ai_insights || []).length > 0) {
+                insightsList.innerHTML = (data.ai_insights || []).map(i => `
+                    <div class="insight-item">
+                        <div class="insight-icon" style="background: rgba(99,102,241,0.2); color: #818cf8;"><i data-lucide="zap"></i></div>
+                        <div class="insight-content">
+                            <p>${i}</p>
+                            <small>AI Generated</small>
+                        </div>
+                    </div>
+                `).join('');
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            requestAnimationFrame(() => {
+                animateCounters();
+            });
+
+            setTimeout(() => {
+                renderPremiumChart();
+            }, 200);
+
             console.log("Live Mongo Dashboard Synced");
         }
     } catch (e) {
-        console.error("Failed to load live dashboard, using fallback:", e);
+        console.error("Failed to load live dashboard:", e);
     }
 }
 
 function renderDashboard() {
-    const data = window.LiveMongoDashboard;
-    if (!data) return;
-
-    // Update Header
-    const welcomeTitle = document.querySelector('.dash-header h1');
-    if (welcomeTitle && data.workspace) {
-        welcomeTitle.innerHTML = `Welcome back to ${data.workspace}`;
-    }
-
-    // Update KPI Data Targets
-    const revEl = document.querySelector('#kpi-detail-revenue');
-    if (revEl && revEl.previousElementSibling) {
-        const counter = revEl.previousElementSibling.querySelector('.anim-counter');
-        if (counter) counter.setAttribute('data-target', data.total_revenue || 0);
-    }
-    
-    const subsEl = document.querySelector('#kpi-detail-subs');
-    if (subsEl && subsEl.previousElementSibling) {
-        const counter = subsEl.previousElementSibling.querySelector('.anim-counter');
-        if (counter) counter.setAttribute('data-target', data.active_subscriptions || 0);
-    }
-    
-    const aiEl = document.querySelector('#kpi-detail-ai');
-    if (aiEl && aiEl.previousElementSibling) {
-        const counter = aiEl.previousElementSibling.querySelector('.anim-counter');
-        if (counter) counter.setAttribute('data-target', data.ai_confidence || 0);
-    }
-    
-    const roiEl = document.querySelector('#kpi-detail-roi');
-    if (roiEl && roiEl.previousElementSibling) {
-        const counter = roiEl.previousElementSibling.querySelector('.anim-counter');
-        if (counter) counter.setAttribute('data-target', data.marketing_roi || 0);
-    }
-
-    // Update KPI Detail Texts (Retention/Churn)
-    const retentionSpan = document.querySelector('#kpi-detail-subs div:nth-child(2) span:nth-child(2)');
-    if (retentionSpan) retentionSpan.innerText = (data.retention_rate || 0) + '%';
-    
-    const churnSpan = document.querySelector('#kpi-detail-subs div:nth-child(1) span:nth-child(2)');
-    const churnValue = data.churn_rate || (100 - (data.retention_rate || 100));
-    if (churnSpan) churnSpan.innerText = churnValue + '% (Healthy)';
-
-    // Update Health Score UI (Optional, if it exists)
-    const healthEls = document.querySelectorAll('.health-score-container'); 
-
-    // Update Activity Feed
-    const feedContainer = document.getElementById('activityFeed');
-    const logs = window.LiveMongoPayload?.activity_logs || data.activity_feed;
-    if (feedContainer && logs && logs.length > 0) {
-        feedContainer.innerHTML = logs.slice(0,5).map(item => `
-            <div class="feed-item">
-                <div class="feed-icon"><i data-lucide="${item.type === 'revenue' ? 'indian-rupee' : (item.type === 'user' ? 'user' : 'cpu')}" class="icon-sm text-${item.type === 'revenue' ? 'green' : (item.type === 'user' ? 'blue' : 'purple')}-500"></i></div>
-                <div class="feed-content">
-                    <h5>${item.type === 'revenue' ? 'Payment Event' : (item.type === 'user' ? 'User Activity' : 'System Event')}</h5>
-                    <p>${item.message || item.msg}</p>
-                    <span class="feed-time">${item.time || (item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now')}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // Update AI Insights
-    const aiContainer = document.querySelector('.dash-card-header + .insight-card');
-    if (aiContainer && data.ai_insights) {
-        const parent = aiContainer.parentElement;
-        if (parent) {
-            const insightsHtml = data.ai_insights.map((msg, idx) => `
-                <div class="insight-card">
-                    <div class="insight-top">
-                        <div class="insight-title"><i data-lucide="${idx === 0 ? 'trending-up' : 'alert-circle'}" class="icon-sm text-${idx === 0 ? 'blue' : 'amber'}-400"></i> ${idx === 0 ? 'Trajectory Optimal' : 'Retention Risk'}</div>
-                        <div class="insight-confidence" ${idx !== 0 ? 'style="color: #f59e0b; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2);"' : ''}>${idx === 0 ? '96% Conf.' : '82% Conf.'}</div>
-                    </div>
-                    <div class="insight-body">
-                        ${msg}
-                    </div>
-                </div>
-            `).join('');
-            
-            const oldCards = parent.querySelectorAll('.insight-card');
-            oldCards.forEach(c => c.remove());
-            parent.insertAdjacentHTML('beforeend', insightsHtml);
-        }
-    }
-    
-    // Re-initialize lucide icons for new HTML
-    if (window.lucide) {
-        setTimeout(() => { window.lucide.createIcons(); }, 50);
-    }
-
-    // Overwrite Chart Datasets
-
-    if (data.growth_chart || data.revenue_growth) chartDatasets.revenue.data = data.growth_chart || data.revenue_growth;
-    if (data.client_growth) chartDatasets.growth.data = data.client_growth;
-    if (data.ai_metrics || data.prediction_score) chartDatasets.aiMetrics.data = data.ai_metrics || [data.prediction_score];
-
-    // Trigger Animations and Chart rendering
-    requestAnimationFrame(() => {
-        try {
-            animateCounters();
-        } catch (e) {
-            console.error("Counter animation failed:", e);
-        }
-    });
-
-    setTimeout(() => {
-        try {
-            renderPremiumChart();
-        saveUserAnalytics();
-            console.log("Dashboard Render Complete");
-        } catch (e) {
-            console.error("Premium chart rendering failed:", e);
-        }
-    }, 200);
+    // Deprecated. Logic moved to loadDashboard.
 }

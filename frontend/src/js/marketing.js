@@ -28,11 +28,11 @@ function createMarketingChart() {
  const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
  let social = 0, email = 0, ppc = 0, display = 0, content = 0;
  
- if (existing.length === 0) {
+ if ((existing || []).length === 0) {
   // Default fallback to look nice if no campaigns exist
   social = 35; email = 25; ppc = 20; display = 12; content = 8;
  } else {
-  existing.forEach(c => {
+  (existing || []).forEach(c => {
    const p = (c.platform || '').toLowerCase();
    const leads = parseInt(c.expectedLeads) || 10;
    if (p.includes('instagram') || p.includes('facebook') || p.includes('tiktok') || p.includes('social') || p.includes('whatsapp')) social += leads;
@@ -98,10 +98,10 @@ function createPerformanceChart() {
  const payload = window.LiveMongoPayload || window.PlatformData || {};
  const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
  let totalLeads = 0;
- existing.forEach(c => totalLeads += (parseInt(c.expectedLeads) || 0));
+ (existing || []).forEach(c => totalLeads += (parseInt(c.expectedLeads) || 0));
  
  let dataPoints = [180, 220, 280, 310, 350, 420];
- if (existing.length > 0 && totalLeads > 0) {
+ if ((existing || []).length > 0 && totalLeads > 0) {
   const base = totalLeads / 6;
   dataPoints = [
    Math.floor(base * 0.5),
@@ -184,7 +184,7 @@ function filterCampaigns() {
  const search = document.getElementById('searchCampaign').value.toLowerCase();
  const rows = document.querySelectorAll('#campaignTable tbody tr');
  
- rows.forEach(row => {
+ (rows || []).forEach(row => {
   const rowStatus = row.getAttribute('data-status');
   const text = row.textContent.toLowerCase();
   const matchStatus = status === 'all' || rowStatus === status;
@@ -331,7 +331,7 @@ function saveCampaign(e) {
 
  const payload = window.LiveMongoPayload || window.PlatformData || {};
  const campaigns = Array.isArray(payload.campaigns) ? payload.campaigns : [];
- campaigns.push(newCampaign);
+ (campaigns || []).push(newCampaign);
  payload.campaigns = campaigns;
  window.PlatformEngine.logActivity('campaign', `Campaign launched: ${newCampaign.name}`);
  window.PlatformEngine.savePlatformData("marketing");
@@ -348,7 +348,7 @@ function saveCampaign(e) {
  function deleteCampaign(id) {
   const payload = window.LiveMongoPayload || window.PlatformData || {};
   const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
-  const filtered = existing.filter(c => c.id !== id);
+  const filtered = (existing || []).filter(c => c.id !== id);
   payload.campaigns = filtered;
   window.PlatformEngine.logActivity('campaign', `Campaign deleted: ${id}`);
   window.PlatformEngine.savePlatformData("marketing");
@@ -364,26 +364,26 @@ function generateAIRecommendations(campaign) {
  const success = parseFloat(campaign.successRate);
 
  if (roi < 50 || success < 40) {
-  recs.push("Increase campaign budget.");
-  if (campaign.duration < 14) recs.push("Short duration limits campaign reach.");
+  (recs || []).push("Increase campaign budget.");
+  if (campaign.duration < 14) (recs || []).push("Short duration limits campaign reach.");
   if (campaign.platform === 'Email Marketing' || campaign.platform === 'WhatsApp') {
-   recs.push("Consider switching to paid social ads.");
+   (recs || []).push("Consider switching to paid social ads.");
   }
  } else {
-  recs.push("Campaign shows strong growth potential.");
-  recs.push("Scale marketing investment gradually.");
+  (recs || []).push("Campaign shows strong growth potential.");
+  (recs || []).push("Scale marketing investment gradually.");
   if (success > 80) {
-   recs.push("High conversion probability detected.");
+   (recs || []).push("High conversion probability detected.");
   }
  }
  
- return recs.map(r => `<li style="margin-bottom: 4px;">${r}</li>`).join('');
+ return (recs || []).map(r => `<li style="margin-bottom: 4px;">${r}</li>`).join('');
 }
 
  function viewCampaign(id) {
   const payload = window.LiveMongoPayload || window.PlatformData || {};
   const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
-  const campaign = existing.find(c => c.id === id);
+  const campaign = (existing || []).find(c => c.id === id);
  
  if (!campaign) {
   if (['summer', 'webinar', 'brand', 'retarget', 'launch', 'holiday'].includes(id)) {
@@ -447,7 +447,7 @@ function renderActiveCampaigns() {
   console.log("LIVE AI:", analytics.ai_confidence);
   console.log("LIVE SCORE:", analytics.prediction_score);
 
-  if (campaigns.length === 0) {
+  if ((campaigns || []).length === 0) {
     if (container) {
       container.innerHTML = `
         <div class="empty-state">
@@ -473,7 +473,7 @@ function renderActiveCampaigns() {
   };
 
   if (container) {
-    container.innerHTML = campaigns.map(campaign => `
+    container.innerHTML = (campaigns || []).map(campaign => `
   <div class="campaign-card">
     <div class="campaign-top">
       <div class="campaign-title-wrap">
@@ -529,7 +529,7 @@ function renderActiveCampaigns() {
   }
 
   if (tableBody) {
-    tableBody.innerHTML = campaigns.map(campaign => `
+    tableBody.innerHTML = (campaigns || []).map(campaign => `
       <tr data-status="${(campaign.status || 'active').toLowerCase()}">
        <td><strong>${campaign.name || 'Unnamed Campaign'}</strong><br><span class="muted" style="font-size: 12px;">${campaign.type || 'Campaign'}</span></td>
        <td><span class="badge" style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3);">${campaign.platform || 'General'}</span></td>
@@ -646,7 +646,7 @@ function updateMarketingDashboard() {
   console.log("MARKETING DASHBOARD SOURCE:", analytics);
   
   let totalLeads = 0;
-  existing.forEach(c => {
+  (existing || []).forEach(c => {
    totalLeads += parseInt(c.expectedLeads) || 0;
   });
   

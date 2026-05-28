@@ -17,7 +17,7 @@ async function initializeSegmentation() {
   console.log("FULL API DATA:", data);
   segmentsData = data;
   
-  window.PlatformData.segmentation.push(data);
+  (window.PlatformData.segmentation || []).push(data);
   window.PlatformEngine.logActivity('segmentation', `Segmentation analysis completed for ${data.metrics?.total_customers || 0} customers`);
   window.PlatformEngine.savePlatformData("segmentation");
   
@@ -152,7 +152,7 @@ function handleErrorState(errMsg) {
  if (segmentListEl) segmentListEl.innerHTML = errorHTML;
  
  const kpiElements = ['segTotalCustomers', 'segSilhouette', 'segCount'];
- kpiElements.forEach(id => {
+ (kpiElements || []).forEach(id => {
   const el = document.getElementById(id);
   if(el) el.innerHTML = '<span style="color: var(--color-accent); font-size: 1rem;">Error</span>';
  });
@@ -197,7 +197,7 @@ function updateUI(data) {
  const segCount = document.getElementById('segCount');
  if (segCount) {
   segCount.style.opacity = 0;
-  segCount.textContent = metrics.number_of_segments || segments.length || "0";
+  segCount.textContent = metrics.number_of_segments || (segments || []).length || "0";
   setTimeout(() => { segCount.style.transition = 'opacity 0.5s'; segCount.style.opacity = 1; }, 150);
  }
  
@@ -211,14 +211,14 @@ function updateUI(data) {
 function renderSegmentList(distribution, centers) {
  const list = document.getElementById('segmentList');
  if (!list) return;
- if (!distribution || distribution.length === 0) {
+ if (!distribution || (distribution || []).length === 0) {
    list.innerHTML = '<p class="muted" style="padding: 16px;">No segments found.</p>';
    return;
  }
  
- const total = distribution.reduce((sum, d) => sum + (d.count || 0), 0);
+ const total = (distribution || []).reduce((sum, d) => sum + (d.count || 0), 0);
  
- list.innerHTML = distribution.map((dist, i) => {
+ list.innerHTML = (distribution || []).map((dist, i) => {
   // Find the center/features for this segment
   const seg = centers?.find(s => s.name === dist.name) || dist;
   const features = seg.features || seg;
@@ -258,14 +258,14 @@ function renderSegmentList(distribution, centers) {
 function renderSegmentTable(centers, distribution, recs) {
  const tbody = document.getElementById('segmentTableBody');
  if (!tbody) return;
- if (!centers || centers.length === 0) {
+ if (!centers || (centers || []).length === 0) {
    tbody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center;">No segments available</td></tr>';
    return;
  }
  
  tbody.style.opacity = 0;
  
- tbody.innerHTML = centers.map(seg => {
+ tbody.innerHTML = (centers || []).map(seg => {
   const dist = distribution?.find(d => d.name === seg.name) || seg;
   const rec = recs?.find(r => r.segment === seg.name) || {};
   const count = dist.count || 0;
@@ -296,7 +296,7 @@ function renderSegmentChart(distribution) {
  const ctx = document.getElementById('segmentChart');
  if (!ctx || !window.Chart) return;
  
- if (!distribution || distribution.length === 0) {
+ if (!distribution || (distribution || []).length === 0) {
   if(chartInstance) chartInstance.destroy();
   return;
  }
@@ -310,15 +310,15 @@ function renderSegmentChart(distribution) {
  
  if(chartInstance) chartInstance.destroy();
  
- const total = distribution.reduce((sum, d) => sum + d.count, 0);
+ const total = (distribution || []).reduce((sum, d) => sum + d.count, 0);
  
  chartInstance = new Chart(ctx, {
   type: 'doughnut',
   data: {
-   labels: distribution.map(s => s.name),
+   labels: (distribution || []).map(s => s.name),
    datasets: [{
-    data: distribution.map(s => s.count),
-    backgroundColor: distribution.map(s => s.color),
+    data: (distribution || []).map(s => s.count),
+    backgroundColor: (distribution || []).map(s => s.color),
     borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#fff',
     borderWidth: 2,
     hoverOffset: 12
@@ -366,7 +366,7 @@ function renderUmapChart(coordinates) {
  const container = document.getElementById('umapContainer');
  if (!container) return;
  
- if (!coordinates || coordinates.length === 0) {
+ if (!coordinates || (coordinates || []).length === 0) {
   container.innerHTML = '<p class="muted">No coordinate data available for scatter plot.</p>';
   return;
  }
@@ -377,13 +377,13 @@ function renderUmapChart(coordinates) {
  
  if(umapInstance) umapInstance.destroy();
 
- const segments = [...new Set(coordinates.map(c => c.segment))];
- const datasets = segments.map(segName => {
-  const points = coordinates.filter(c => c.segment === segName);
+ const segments = [...new Set((coordinates || []).map(c => c.segment))];
+ const datasets = (segments || []).map(segName => {
+  const points = (coordinates || []).filter(c => c.segment === segName);
   const color = points[0]?.color || '#8ab4f8';
   return {
    label: segName,
-   data: points.map(p => ({ x: p.x, y: p.y, raw: p })),
+   data: (points || []).map(p => ({ x: p.x, y: p.y, raw: p })),
    backgroundColor: color + '99', // 60% opacity
    borderColor: color,
    borderWidth: 1,
@@ -398,14 +398,14 @@ function renderUmapChart(coordinates) {
   data: { datasets },
   options: {
    onClick: (e, elements) => {
-    if (elements && elements.length > 0) {
+    if (elements && (elements || []).length > 0) {
      const el = elements[0];
      const point = umapInstance.data.datasets[el.datasetIndex].data[el.index];
      window.showSegmentDetails(point.raw.segment);
     }
    },
    onHover: (e, elements) => {
-    e.native.target.style.cursor = elements && elements.length > 0 ? 'pointer' : 'default';
+    e.native.target.style.cursor = elements && (elements || []).length > 0 ? 'pointer' : 'default';
    },
    responsive: true,
    maintainAspectRatio: false,
@@ -465,7 +465,7 @@ function renderTargetingSuggestions(recommendations) {
  const container = document.getElementById('targetingSuggestions');
  if (!container) return;
  
- if (!recommendations || recommendations.length === 0) {
+ if (!recommendations || (recommendations || []).length === 0) {
    container.innerHTML = '<p class="muted">No targeting recommendations available.</p>';
    return;
  }
@@ -481,7 +481,7 @@ function renderTargetingSuggestions(recommendations) {
  
  container.innerHTML = `
   <div style="display: grid; gap: 16px;">
-   ${recommendations.map((s, i) => `
+   ${(recommendations || []).map((s, i) => `
     <div class="card neon-card" style="display: flex; align-items: center; gap: 16px; padding: 20px; background: linear-gradient(to right, rgba(99,102,241,0.03), transparent); border: 1px solid rgba(99,102,241,0.15);">
      <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2)); display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid rgba(99,102,241,0.3);"><i data-lucide="sparkles" class="icon-sm text-amber-500"></i></div>
      <div style="flex: 1;">

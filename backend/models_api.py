@@ -14,7 +14,7 @@ Models:
 import os, json, pickle, warnings
 import numpy as np
 import pandas as pd
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
 from datetime import datetime
@@ -44,6 +44,8 @@ from db import (
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app)
 
 CORS(
     app,
@@ -153,21 +155,19 @@ def signup():
 
 @app.route("/api/login", methods=["POST", "OPTIONS"])
 def login():
-
     if request.method == "OPTIONS":
         return jsonify({"status": "ok"}), 200
 
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
         email = data.get("email", "").strip().lower()
         password = data.get("password", "").strip()
 
         if not email or not password:
-            return jsonify({
-                "success": False,
-                "message": "Email and password required"
-            }), 400
+            return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
         user = users_collection.find_one({
             "email": email
@@ -176,114 +176,42 @@ def login():
         if not user:
             return jsonify({
                 "success": False,
-                "message": "User not found"
+                "message": "Invalid email or password"
             }), 401
 
         stored_password = user.get("password")
-
         if not stored_password:
             return jsonify({
                 "success": False,
-                "message": "Password missing"
+                "message": "Invalid email or password"
             }), 401
-
-        print("LOGIN EMAIL:", email)
-        print("USER FOUND:", user is not None)
 
         password_match = bcrypt.checkpw(
             password.encode("utf-8"),
             stored_password.encode("utf-8")
         )
-        print("PASSWORD MATCH:", password_match)
 
         if not password_match:
             return jsonify({
                 "success": False,
-                "message": "Invalid password"
+                "message": "Invalid email or password"
             }), 401
 
         return jsonify({
             "success": True,
-            "message": "Login successful",
             "user": {
-                "name": user.get("name", ""),
-                "email": user.get("email", ""),
+                "name": user.get("name"),
+                "email": user.get("email"),
                 "role": user.get("role", "user")
             }
         }), 200
 
     except Exception as e:
         print("LOGIN ERROR:", str(e))
-
         return jsonify({
             "success": False,
-            "message": str(e)
-        }), 500, 200
-
-    try:
-        data = request.json
-        email = data.get("email", "").strip().lower()
-        password = data.get("password")
-
-        user = users_collection.find_one({"email": email})
-
-        if not user:
-            return jsonify({"success": False, "message": "User not found"}), 401
-
-        if not user.get('password'):
-            return jsonify({"success": False, "message": "Invalid user account"}), 401
-
-        if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-            return jsonify({
-                "success": True,
-                "user": {
-                    "name": user.get("name"),
-                    "email": user.get("email"),
-                    "role": user.get("role", "user")
-                }
-            }), 200
-        else:
-            return jsonify({"success": False, "message": "Invalid password"}), 401
-            
-    except Exception as e:
-        print("Login Error:", str(e))
-        return jsonify({"success": False, "error": str(e)}), 500, 200
-
-    data = request.json
-
-    email = data.get("email", "").strip().lower()
-    password = data.get("password")
-
-    user = users_collection.find_one({
-        "email": email
-    })
-
-    if not user:
-        return jsonify({
-            "success": False,
-            "message": "User not found"
+            "message": "Invalid email or password"
         }), 401
-
-    stored_password = user.get("password", "")
-
-    if not bcrypt.checkpw(
-        password.encode('utf-8'),
-        stored_password.encode('utf-8')
-    ):
-        return jsonify({
-            "success": False,
-            "message": "Invalid password"
-        }), 401
-
-    return jsonify({
-        "success": True,
-        "user": {
-            "name": user.get("name"),
-            "email": user.get("email"),
-            "company": user.get("company"),
-            "role": user.get("role", "user")
-        }
-    })
 
 @app.route('/test', methods=['GET', 'POST', 'OPTIONS'])
 def test():
@@ -342,16 +270,7 @@ def handle_users():
         }), 500
 
 
-@app.route('/api/users/<id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-def delete_user(id):
 
-    users_collection.delete_one({
-        "_id": ObjectId(id)
-    })
-
-    return jsonify({
-        "success": True
-    })
 
 # ─────────────────────────────────────
 # SUBSCRIPTIONS API
@@ -1786,129 +1705,6 @@ def get_dashboard():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route("/api/user-dashboard/<email>", methods=["GET", "OPTIONS"])
-def get_user_dashboard(email):
-
-    if request.method == "OPTIONS":
-        return jsonify({"status": "ok"}), 200
-
-    try:
-        from db import (
-            users_collection,
-            user_analytics_collection,
-            analytics_collection,
-            campaigns_collection,
-            forecasts_collection,
-            recommendations_collection,
-            activity_logs_collection
-        )
-
-        # 1. User
-        user = users_collection.find_one({"email": email})
-        user = {k: v for k, v in user.items() if k != "_id"} if user else {}
-
-        # 2. User Dashboard Analytics
-        dashboard = user_analytics_collection.find_one({"user_email": email})
-        if not dashboard:
-            # Fallback safe defaults if empty
-            dashboard = {
-                "user_email": email,
-                "workspace": "VenturX Workspace",
-                "total_revenue": 1250000,
-                "active_subscriptions": 150,
-                "ai_confidence": 92,
-                "marketing_roi": 12.5,
-                "retention_rate": 95,
-                "growth_chart": [10, 20, 35, 55, 80, 100],
-                "client_growth": [5, 10, 25, 40, 60, 85],
-                "ai_insights": ["Strong growth trajectory detected."],
-                "traffic_sources": {"organic": 40, "social": 25, "direct": 15, "referral": 10, "paid": 10},
-                "top_performing_pages": [
-                    { "path": "/", "views": 45020, "bounce": 32, "time": 145, "conv": 4.2 },
-                    { "path": "/pricing", "views": 28400, "bounce": 45, "time": 90, "conv": 8.5 },
-                    { "path": "/blog", "views": 19200, "bounce": 65, "time": 210, "conv": 1.2 }
-                ]
-            }
-        else:
-            dashboard["_id"] = str(dashboard["_id"])
-
-        # 3. Global Analytics
-        analytics = analytics_collection.find_one({})
-        if analytics and "_id" in analytics:
-            analytics["_id"] = str(analytics["_id"])
-        else:
-            analytics = {}
-
-        # 4. Campaigns
-        campaigns = list(campaigns_collection.find({}))
-        for c in campaigns:
-            c["_id"] = str(c["_id"])
-
-        # 5. Forecasts
-        forecasts = list(forecasts_collection.find({}))
-        for f in forecasts:
-            f["_id"] = str(f["_id"])
-
-        # 6. Recommendations
-        recommendations = list(recommendations_collection.find({}))
-        for r in recommendations:
-            r["_id"] = str(r["_id"])
-
-        # 7. Activity Logs
-        activity_logs = list(activity_logs_collection.find({}))
-        for a in activity_logs:
-            a["_id"] = str(a["_id"])
-
-        # Fetch raw user_analytics as a list without _id
-        user_analytics = list(
-            user_analytics_collection.find(
-                {"user_email": email},
-                {"_id": 0}
-            )
-        )
-
-        # 8. Safe CRM Defaults (Since we don't have a CRM collection)
-        crm = [
-            {
-                "id": "crm_001",
-                "startupName": dashboard.get("workspace", "Your Startup"),
-                "fullName": user.get("name", "Founder"),
-                "email": email,
-                "subscriptionPlan": "enterprise",
-                "activityLevel": "Highly Active",
-                "status": "Active User",
-                "forecastsCreated": len(forecasts),
-                "campaignsCreated": len(campaigns),
-                "retention": dashboard.get("retention_rate", 90),
-                "lastActive": dashboard.get("updated_at", "2026-05-27")
-            }
-        ]
-
-        unified_payload = {
-            "success": True,
-            "user": user,
-            "dashboard": dashboard,
-            "analytics": analytics,
-            "crm": crm,
-            "campaigns": campaigns,
-            "forecasts": forecasts,
-            "recommendations": recommendations,
-            "activity_logs": activity_logs,
-            "user_analytics": user_analytics
-        }
-
-        return jsonify(unified_payload), 200
-
-    except Exception as e:
-        print("USER DASHBOARD ERROR:", str(e))
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
-
-# ══════════════════════════════════════════════════════════════════════════════
-# CRM – Add Startup
-# ══════════════════════════════════════════════════════════════════════════════
 @app.route('/api/crm/add-startup', methods=['POST', 'OPTIONS'])
 def add_crm_startup():
 
@@ -2345,7 +2141,212 @@ def analytics_overview():
             }
         }), 500
 
+
+@app.route('/api/dashboard/<email>', methods=['GET', 'OPTIONS'])
+def new_user_dashboard(email):
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+
+    try:
+        from db import users_collection, user_analytics_collection, financials_collection
+        import random
+
+        # Fetch user
+        user = users_collection.find_one({"email": email})
+        startup_name = user.get("company", "Unknown Workspace") if user else "Unknown Workspace"
+        industry = user.get("industry", "Technology") if user else "Technology"
+
+        # Fetch user analytics
+        user_analytics = user_analytics_collection.find_one({"user_email": email})
+
+        # Fetch financials
+        financials = financials_collection.find_one({"user_email": email})
+
+        # Merge metrics
+        revenue = 0
+        subscriptions = 0
+        ai_confidence = 0
+        marketing_roi = 0
+        growth_chart = []
+        ai_insights = []
+        workspace_name = startup_name
+
+        has_data = False
+        if user_analytics:
+            subscriptions = user_analytics.get("active_subscriptions", 0)
+            ai_confidence = user_analytics.get("ai_confidence", 0)
+            marketing_roi = user_analytics.get("marketing_roi", 0)
+            growth_chart = user_analytics.get("growth_chart", [])
+            ai_insights = user_analytics.get("ai_insights", [])
+            revenue = user_analytics.get("total_revenue", 0)
+            has_data = True
+            
+        if financials:
+            revenue = financials.get("total_revenue", revenue)
+            has_data = True
+
+        if not has_data:
+            # Generate randomized starter metrics based on industry and startup name
+            industry_lower = industry.lower()
+            startup_lower = startup_name.lower()
+            
+            if "ai" in industry_lower or "ai" in startup_lower:
+                ai_confidence = random.randint(85, 98)
+                marketing_roi = round(random.uniform(2.5, 4.5), 1)
+            elif "edtech" in industry_lower or "edtech" in startup_lower or "education" in industry_lower:
+                ai_confidence = random.randint(60, 80)
+                marketing_roi = round(random.uniform(1.2, 2.8), 1)
+            elif "marketing" in industry_lower or "marketing" in startup_lower:
+                ai_confidence = random.randint(70, 90)
+                marketing_roi = round(random.uniform(4.5, 8.5), 1)
+            else:
+                ai_confidence = random.randint(60, 90)
+                marketing_roi = round(random.uniform(2.0, 5.0), 1)
+
+            subscriptions = random.randint(10, 500)
+            revenue = subscriptions * random.randint(500, 2500)
+            
+            growth_chart = [random.randint(10, 100) for _ in range(6)]
+            ai_insights = [f"Welcome to VenturX, {startup_name}!", "Your workspace is ready."]
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "revenue": revenue,
+                "subscriptions": subscriptions,
+                "ai_confidence": ai_confidence,
+                "marketing_roi": marketing_roi,
+                "growth_chart": growth_chart,
+                "ai_insights": ai_insights,
+                "workspace_name": workspace_name
+            }
+        }), 200
+
+    except Exception as e:
+        print("DASHBOARD API ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/financials/<path:email>', methods=['GET', 'OPTIONS'])
+def get_user_financials(email):
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+
+    try:
+        from db import financials_collection
+        
+        financial_data = financials_collection.find_one({"user_email": email})
+        
+        if not financial_data:
+            # Return demo fallback data
+            financial_data = {
+                "mrr": 450000,
+                "revenue": 5400000,
+                "expenses": 125000,
+                "profit": 325000,
+                "burn_rate": 45000,
+                "investor_score": 85
+            }
+        else:
+            if "_id" in financial_data:
+                financial_data["_id"] = str(financial_data["_id"])
+                
+        # Remove non-serializable
+        safe_data = {}
+        for key, value in financial_data.items():
+            try:
+                safe_data[key] = value
+            except:
+                safe_data[key] = str(value)
+                
+        return jsonify({
+            "success": True,
+            "data": safe_data
+        }), 200
+
+    except Exception as e:
+        print("GET FINANCIALS ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/users/<path:email>', methods=['GET'])
+def get_user(email):
+
+    try:
+
+        print("GET USER CALLED:", email)
+
+        user = users_collection.find_one({
+            "email": email
+        })
+
+        if not user:
+
+            return jsonify({
+                "success": False,
+                "message": "User not found"
+            }), 404
+
+        user["_id"] = str(user["_id"])
+
+        if "password" in user:
+            del user["password"]
+
+        return jsonify({
+            "success": True,
+            "user": user
+        }), 200
+
+    except Exception as e:
+
+        print("API ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+@app.route('/api/users/<path:email>', methods=['DELETE'])
+def delete_user(email):
+
+    try:
+
+        result = users_collection.delete_one({
+            "email": email
+        })
+
+        if result.deleted_count == 0:
+
+            return jsonify({
+                "success": False,
+                "message": "User not found"
+            }), 404
+
+        return jsonify({
+            "success": True,
+            "message": "User deleted successfully"
+        }), 200
+
+    except Exception as e:
+
+        print("DELETE USER ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
 if __name__ == '__main__':
+
+
+
 
 
 

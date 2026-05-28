@@ -58,7 +58,7 @@ function setupTopbarInteractions() {
   themeBtn.addEventListener('click', () => {
    const current = document.documentElement.getAttribute('data-theme');
    const order = ['corporate','dark','light','brand','sunset'];
-   const next = order[(order.indexOf(current) + 1) % order.length];
+   const next = order[(order.indexOf(current) + 1) % (order || []).length];
    applyTheme(next);
   });
  }
@@ -117,11 +117,12 @@ async function bootstrap() {
   if (session.role !== "admin" && session.email) {
       try {
           console.log("Fetching live user payload for:", session.email);
-          const response = await fetch(`http://127.0.0.1:5000/api/user-dashboard/${session.email}`);
+          const endpoint = `http://127.0.0.1:5000/api/users/${session.email}`;
+          console.log("Active dashboard API:", endpoint);
+          const response = await fetch(endpoint);
           const json = await response.json();
           if (json.success) {
               window.LiveMongoPayload = json;
-              window.LiveMongoDashboard = json.dashboard;
               window.PlatformData = json; // Ensure legacy modules like crm.js use live data
           }
       } catch(e) {
@@ -287,7 +288,7 @@ function mountChatbot() {
    { k: ['financial','revenue','expense','profit'], a: 'Open Financials to view revenue, expenses, and profit in real time.' }
   ];
   for (const item of canned) {
-   if (item.k.some(w => question.includes(w))) return item.a;
+   if ((item.k || []).some(w => question.includes(w))) return item.a;
   }
   return `I noted you are on the "${page}" page. Could you share more details?`;
  }

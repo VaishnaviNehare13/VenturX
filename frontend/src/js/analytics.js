@@ -80,6 +80,7 @@ function getChartColors() {
 async function updateAnalyticsKPIs() {
     try {
         const response = await fetch('http://127.0.0.1:5000/api/analytics/overview');
+        if (!response.ok) { throw new Error("API failed"); }
         const json = await response.json();
         const data = json.success ? json.data : {
             total_users: 0,
@@ -133,7 +134,7 @@ function renderAIInsights() {
  const list = document.getElementById('aiInsightsList');
  if (!list) return;
  
- list.innerHTML = insights.map(i => `
+ list.innerHTML = (insights || []).map(i => `
   <li class="insight-item" style="border-left-color: ${i.color}">
    <div class="insight-icon">${i.icon}</div>
    <div>
@@ -295,7 +296,7 @@ function initHealthScoreChart() {
    responsive: true,
    maintainAspectRatio: false,
    onClick: (e, activeEls) => {
-    if(activeEls.length > 0) {
+    if((activeEls || []).length > 0) {
       const index = activeEls[0].index;
       const label = analyticsCharts.platformUsage.data.labels[index];
       const routeMap = { 'CRM': '#/crm', 'Forecasting': '#/forecasting', 'Marketing': '#/marketing', 'Branding Studio': '#/branding', 'Content Hub': '#/content' };
@@ -352,7 +353,7 @@ function initHealthScoreChart() {
   options: {
    responsive: true, maintainAspectRatio: false,
    onClick: (e, activeEls) => {
-    if(activeEls.length > 0) {
+    if((activeEls || []).length > 0) {
       const index = activeEls[0].index;
       const label = analyticsCharts.sources.data.labels[index];
       if (window.filterTopPagesBySource) window.filterTopPagesBySource(label);
@@ -377,17 +378,17 @@ function initHealthScoreChart() {
   const forecasts = payload.forecasts || [];
   
   let data = null;
-  if (forecasts.length > 0 && forecasts[0].forecast_data) {
+  if ((forecasts || []).length > 0 && forecasts[0].forecast_data) {
      data = { forecast: forecasts[0].forecast_data };
   } else {
      data = await AnalyticsEngine.getForecastingData();
-     if (!data) {
+     if (!data || data.length === 0) {
        data = generateFallbackForecast(periods);
      }
   }
 
  const forecastData = data.forecast || [];
- const total = forecastData.reduce((sum, d) => sum + d.predicted, 0);
+ const total = (forecastData || []).reduce((sum, d) => sum + d.predicted, 0);
  
  const revEl = document.getElementById('kpiRevenue');
  if (revEl) revEl.textContent = '₹' + (total / 1000000).toFixed(2) + 'M';
@@ -399,34 +400,34 @@ function initHealthScoreChart() {
  if (avg) avg.textContent = '₹' + Math.round(total / periods).toLocaleString('en-IN');
 
  const ctx = document.getElementById('forecastChart');
- if (!ctx || !window.Chart || forecastData.length === 0) return;
+ if (!ctx || !window.Chart || (forecastData || []).length === 0) return;
  if (analyticsCharts.forecast) analyticsCharts.forecast.destroy();
 
  const colors = getChartColors();
  const sampleIndices = [];
- for (let i = 0; i < forecastData.length; i += Math.ceil(forecastData.length / 20)) {
-  sampleIndices.push(i);
+ for (let i = 0; i < (forecastData || []).length; i += Math.ceil((forecastData || []).length / 20)) {
+  (sampleIndices || []).push(i);
  }
 
  analyticsCharts.forecast = new Chart(ctx, {
   type: 'line',
   data: {
-   labels: sampleIndices.map(i => new Date(forecastData[i].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+   labels: (sampleIndices || []).map(i => new Date(forecastData[i].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
    datasets: [
     {
      label: 'Predicted Sales',
-     data: sampleIndices.map(i => forecastData[i].predicted),
+     data: (sampleIndices || []).map(i => forecastData[i].predicted),
      borderColor: colors.primary,
      backgroundColor: 'rgba(99, 102, 241, 0.1)',
      borderWidth: 3, fill: true, tension: 0.4,
      pointRadius: 4, pointBackgroundColor: colors.primary, pointBorderColor: '#fff'
     },
     {
-     label: 'Upper Bound', data: sampleIndices.map(i => forecastData[i].upper),
+     label: 'Upper Bound', data: (sampleIndices || []).map(i => forecastData[i].upper),
      borderColor: 'rgba(99, 102, 241, 0.3)', borderWidth: 2, borderDash: [5, 5], fill: false, pointRadius: 0, tension: 0.4
     },
     {
-     label: 'Lower Bound', data: sampleIndices.map(i => forecastData[i].lower),
+     label: 'Lower Bound', data: (sampleIndices || []).map(i => forecastData[i].lower),
      borderColor: 'rgba(99, 102, 241, 0.3)', borderWidth: 2, borderDash: [5, 5], fill: '-1',
      backgroundColor: 'rgba(99, 102, 241, 0.05)', pointRadius: 0, tension: 0.4
     }
@@ -435,7 +436,7 @@ function initHealthScoreChart() {
   options: {
    responsive: true, maintainAspectRatio: false,
    onClick: (e, activeEls) => {
-    if(activeEls.length > 0) {
+    if((activeEls || []).length > 0) {
       const index = activeEls[0].index;
       const label = analyticsCharts.sources.data.labels[index];
       if (window.filterTopPagesBySource) window.filterTopPagesBySource(label);
@@ -466,7 +467,7 @@ function generateFallbackForecast(periods) {
   d.setDate(d.getDate() + i);
   const noise = (Math.random() - 0.5) * 160000;
   const val = base + trend * i + noise;
-  forecast.push({
+  (forecast || []).push({
    date: d.toISOString().split('T')[0],
    predicted: Math.round(val * 100) / 100,
    lower: Math.round(val * 0.96 * 100) / 100,
@@ -487,7 +488,7 @@ window.updateForecastAnalytics = function() {
  if (searchInput) {
    searchInput.addEventListener('input', (e) => {
      const val = e.target.value.toLowerCase();
-     const filtered = topPagesData.filter(row => row.path.toLowerCase().includes(val));
+     const filtered = (topPagesData || []).filter(row => row.path.toLowerCase().includes(val));
      renderTopPages(filtered);
    });
  }
@@ -503,7 +504,7 @@ function handleAnalyticsThemeChange() {
   { chart: analyticsCharts.sources, hasScales: false }
  ];
  
- chartsToUpdate.forEach(({ chart, hasScales, isRadar }) => {
+ (chartsToUpdate || []).forEach(({ chart, hasScales, isRadar }) => {
   if (chart) {
    if (chart.options.plugins.legend && chart.options.plugins.legend.labels) {
     chart.options.plugins.legend.labels.color = colors.text;
@@ -539,7 +540,7 @@ window.openKpiModal = function(title) {
   
   // Generate historical data
   const histData = AnalyticsEngine.getHistoricalData(title, globalFilterDays);
-  const currentValue = histData[histData.length - 1].value;
+  const currentValue = histData[(histData || []).length - 1].value;
   const previousValue = histData[0].value;
   const growth = previousValue > 0 ? ((currentValue - previousValue) / previousValue) * 100 : 0;
   
@@ -555,10 +556,10 @@ window.openKpiModal = function(title) {
   kpiDetailChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: histData.map(d => d.date),
+      labels: (histData || []).map(d => d.date),
       datasets: [{
         label: title,
-        data: histData.map(d => d.value),
+        data: (histData || []).map(d => d.value),
         borderColor: colors.primary,
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         borderWidth: 3,
@@ -601,7 +602,7 @@ window.openHealthModal = function() {
   const grid = document.getElementById('healthBreakdownGrid');
   const breakdown = AnalyticsEngine.getHealthScoreBreakdown();
   
-  grid.innerHTML = breakdown.map(item => {
+  grid.innerHTML = (breakdown || []).map(item => {
     let color = item.score > 85 ? '#10b981' : (item.score > 60 ? '#f59e0b' : '#ef4444');
     return `
       <div class="radial-item">
@@ -635,7 +636,7 @@ window.closeBiModal = function(id) {
    const tbody = document.getElementById('topPagesTable');
    if (!tbody) return;
    
-   tbody.innerHTML = dataToRender.map(row => `
+   tbody.innerHTML = (dataToRender || []).map(row => `
     <tr class="interactive-row" onclick="window.Router.navigate('#/segmentation')">
       <td style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: #f8fafc; font-weight: 500;">${row.path}</td>
       <td style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">${row.views.toLocaleString('en-IN')}</td>
@@ -683,7 +684,7 @@ const activityEvents = [
      let logs = payload.activity_logs || [];
      
      // Fallback if Mongo payload is completely empty (no activity)
-     if (logs.length === 0) {
+     if ((logs || []).length === 0) {
        feed.innerHTML = '<div class="muted" style="font-size: 13px; text-align: center; padding: 20px;">No platform activity yet.</div>';
        return;
      }
@@ -691,12 +692,12 @@ const activityEvents = [
      // Limit to 8
      const notifications = logs.slice(0, 8);
     
-    if (notifications.length === 0) {
+    if ((notifications || []).length === 0) {
       feed.innerHTML = '<div class="muted" style="font-size: 13px; text-align: center; padding: 20px;">No platform activity yet.</div>';
       return;
     }
 
-    feed.innerHTML = notifications.map(n => `
+    feed.innerHTML = (notifications || []).map(n => `
       <div class="activity-item">
         <div style="font-size: 16px;"></div>
         <div>
@@ -716,6 +717,11 @@ const activityEvents = [
  window.initAnalyticsPage = function() {
   console.log("LIVE MONGO CHART DATA:", window.LiveMongoPayload);
   
+  let chartData = window.LiveMongoPayload?.charts || window.LiveMongoPayload?.analytics || window.LiveMongoPayload?.metrics || [];
+  if (!Array.isArray(chartData)) {
+      chartData = [];
+  }
+  
   updateAnalyticsKPIs();
   renderAIInsights();
  
@@ -733,7 +739,7 @@ const activityEvents = [
  if (searchInput) {
    searchInput.addEventListener('input', (e) => {
      const val = e.target.value.toLowerCase();
-     const filtered = topPagesData.filter(row => row.path.toLowerCase().includes(val));
+     const filtered = (topPagesData || []).filter(row => row.path.toLowerCase().includes(val));
      renderTopPages(filtered);
    });
  }

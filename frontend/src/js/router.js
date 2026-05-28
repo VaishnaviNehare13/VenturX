@@ -197,21 +197,15 @@ const Router = (() => {
       window.initAdminDashboard();
     }
    } else if (!isPublic) {
-    if (hash === '#/segmentation' && window.initializeSegmentation) window.initializeSegmentation();
-    if (hash === '#/dashboard' && window.initDashboardPage) window.initDashboardPage();
-    if (hash === '#/forecasting' && window.initializeForecasting) window.initializeForecasting();
-    if (hash === '#/marketing' && window.initMarketingPage) window.initMarketingPage();
-    if (hash === '#/crm' && window.initCRMPage) window.initCRMPage();
+    try { if (hash === '#/segmentation' && window.initializeSegmentation) window.initializeSegmentation(); } catch(err) { console.error('Segmentation failed safely:', err); }
+    try { if (hash === '#/dashboard' && window.initDashboardPage) window.initDashboardPage(); } catch(err) { console.error('Dashboard failed safely:', err); }
+    try { if (hash === '#/forecasting' && window.initializeForecasting) window.initializeForecasting(); } catch(err) { console.error('Forecasting failed safely:', err); }
+    try { if (hash === '#/marketing' && window.initMarketingPage) window.initMarketingPage(); } catch(err) { console.error('Marketing failed safely:', err); }
+    try { if (hash === '#/crm' && window.initCRMPage) window.initCRMPage(); } catch(err) { console.error('CRM failed safely:', err); }
     if (hash === '#/content' && window.initContentHub) window.initContentHub();
     if (hash === '#/branding' && window.initBrandingStudio) window.initBrandingStudio();
-    if (hash === '#/analytics') {
-     if (window.destroyAnalyticsCharts) window.destroyAnalyticsCharts();
-     if (window.initAnalyticsPage) window.initAnalyticsPage();
-    }
-    if (hash === '#/financials') {
-     if (window.destroyFinancialCharts) window.destroyFinancialCharts();
-     if (window.initFinancialsPage) window.initFinancialsPage();
-    }
+    try { if (hash === '#/analytics') { if (window.destroyAnalyticsCharts) window.destroyAnalyticsCharts(); if (window.initAnalyticsPage) window.initAnalyticsPage(); } } catch(err) { console.error('Analytics failed safely:', err); }
+    try { if (hash === '#/financials') { if (window.destroyFinancialCharts) window.destroyFinancialCharts(); if (window.initFinancialsPage) window.initFinancialsPage(); } } catch(err) { console.error('Financials failed safely:', err); }
    }
   } catch (err) {
    console.error("Route load error:", err);

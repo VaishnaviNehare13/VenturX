@@ -70,7 +70,7 @@ const FinancialEngine = (() => {
   let currentExp = kpis.expenses;
   for (let i = months - 1; i >= 0; i--) {
    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-   history.push({
+   (history || []).push({
     month: d.toLocaleDateString('en-US', { month: 'short' }),
     revenue: Math.round(currentRev),
     expenses: Math.round(currentExp)
@@ -108,13 +108,13 @@ const FinancialEngine = (() => {
 
   for (let i = months - 1; i >= 0; i--) {
    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-   data.labels.push(d.toLocaleDateString('en-US', { month: 'short' }));
+   (data.labels || []).push(d.toLocaleDateString('en-US', { month: 'short' }));
    
    let val = currentValue / Math.pow(trend, i);
    if (metricType.toLowerCase().includes('investor')) val = Math.min(100, Math.max(0, val + (Math.random() - 0.5)*variance));
    else val += (Math.random() - 0.5) * variance;
 
-   data.values.push(Math.round(val));
+   (data.values || []).push(Math.round(val));
   }
   return data;
  }

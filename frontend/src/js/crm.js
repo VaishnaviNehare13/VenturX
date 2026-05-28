@@ -19,8 +19,8 @@ const avatarColors = [
 
 function getAvatarStyle(name) {
  let hash = 0;
- for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
- const index = Math.abs(hash) % avatarColors.length;
+ for (let i = 0; i < (name || []).length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+ const index = Math.abs(hash) % (avatarColors || []).length;
  return avatarColors[index];
 }
 
@@ -59,7 +59,7 @@ function calculateAIScore(customer) {
  
  const enterpriseKeywords = ['enterprise', 'global', 'corp'];
  const nameLower = (customer.startupName || '').toLowerCase();
- if (enterpriseKeywords.some(kw => nameLower.includes(kw))) {
+ if ((enterpriseKeywords || []).some(kw => nameLower.includes(kw))) {
   score += 20;
  }
  return Math.min(score, 100);
@@ -112,17 +112,17 @@ window.renderLeads = function() {
  
  let filtered = saasCustomers;
  if (stageFilter !== 'all') {
-  filtered = filtered.filter(l => l.status.toLowerCase() === stageFilter.toLowerCase());
+  filtered = (filtered || []).filter(l => l.status.toLowerCase() === stageFilter.toLowerCase());
  }
  if (search) {
-  filtered = filtered.filter(l => 
+  filtered = (filtered || []).filter(l => 
    l.fullName.toLowerCase().includes(search) || 
    l.startupName.toLowerCase().includes(search) ||
    l.email.toLowerCase().includes(search)
   );
  }
  
- if (filtered.length === 0) {
+ if ((filtered || []).length === 0) {
   tbody.innerHTML = `
    <tr>
     <td colspan="7" style="text-align: center; padding: 60px 20px;">
@@ -135,7 +135,7 @@ window.renderLeads = function() {
   return;
  }
  
- filtered.forEach(customer => {
+ (filtered || []).forEach(customer => {
   const score = calculateAIScore(customer);
   const lastActiveDate = new Date(customer.lastActive).toLocaleDateString();
   const initials = customer.startupName.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
@@ -257,7 +257,7 @@ window.handleAddLead = async function(e) {
       console.error("Failed to add to MongoDB:", error);
   }
 
-  saasCustomers.push({
+  (saasCustomers || []).push({
    id: 'user_' + Date.now(),
    joinedDate: new Date().toISOString(),
    aiToolsUsed: 1,
@@ -278,7 +278,7 @@ window.handleAddLead = async function(e) {
 };
 
 window.editLead = function(id) {
- const customer = saasCustomers.find(l => l.id === id);
+ const customer = (saasCustomers || []).find(l => l.id === id);
  if (!customer) return;
  
  editingLeadId = id;
@@ -303,9 +303,9 @@ window.editLead = function(id) {
 
 window.deleteLead = function(id) {
  if (confirm("Are you sure you want to delete this startup?")) {
-  const deleted = saasCustomers.find(l => l.id === id);
+  const deleted = (saasCustomers || []).find(l => l.id === id);
   if (deleted) window.PlatformEngine.logActivity('crm', `Deleted CRM Lead: ${deleted.startupName}`);
-  saasCustomers = saasCustomers.filter(l => l.id !== id);
+  saasCustomers = (saasCustomers || []).filter(l => l.id !== id);
   window.PlatformData.crm = saasCustomers; // sync array reference
   saveCustomersToStorage();
   renderLeads();
@@ -323,14 +323,14 @@ function populateBusinessInsightsSelect() {
  if (!select) return;
  
  select.innerHTML = '<option value="">Select Startup...</option>';
- saasCustomers.forEach(c => {
+ (saasCustomers || []).forEach(c => {
   const opt = document.createElement('option');
   opt.value = c.id;
   opt.textContent = c.startupName;
   select.appendChild(opt);
  });
  
- if(saasCustomers.length > 0) {
+ if((saasCustomers || []).length > 0) {
   select.value = saasCustomers[0].id;
   window.loadBusinessInsights();
  }
@@ -347,7 +347,7 @@ window.loadBusinessInsights = function() {
   return;
  }
  
- const c = saasCustomers.find(l => l.id === customerId);
+ const c = (saasCustomers || []).find(l => l.id === customerId);
  const score = calculateAIScore(c);
  
  // Dynamic metrics
@@ -393,7 +393,7 @@ window.loadBusinessInsights = function() {
   CUSTOMER PROFILE MODAL
 ============================================================== */
 window.openCustomerProfile = function(id) {
- const customer = saasCustomers.find(l => l.id === id);
+ const customer = (saasCustomers || []).find(l => l.id === id);
  if (!customer) return;
  
  const score = calculateAIScore(customer);
@@ -448,28 +448,28 @@ window.openCustomerProfile = function(id) {
  const joinT = new Date(customer.joinedDate).getTime();
  const nowT = new Date().getTime();
  
- events.push({ text: 'Account Created', date: new Date(joinT) });
+ (events || []).push({ text: 'Account Created', date: new Date(joinT) });
  
  if (customer.subscriptionPlan !== 'free') {
-  events.push({ text: `Upgraded to ${customer.subscriptionPlan} Plan`, date: new Date(joinT + 86400000 * 2) });
+  (events || []).push({ text: `Upgraded to ${customer.subscriptionPlan} Plan`, date: new Date(joinT + 86400000 * 2) });
  }
  
  if (customer.forecastsCreated > 0) {
-  events.push({ text: 'Generated Sales Forecast', date: new Date(joinT + 86400000 * 5) });
+  (events || []).push({ text: 'Generated Sales Forecast', date: new Date(joinT + 86400000 * 5) });
  }
  
  if (customer.campaignsCreated > 0) {
-  events.push({ text: 'Launched AI Campaign', date: new Date(joinT + 86400000 * 10) });
+  (events || []).push({ text: 'Launched AI Campaign', date: new Date(joinT + 86400000 * 10) });
  }
  
  if (customer.activityLevel !== 'Inactive') {
-  events.push({ text: 'Logged into SaaS Platform', date: new Date(nowT - 86400000 * 1) });
+  (events || []).push({ text: 'Logged into SaaS Platform', date: new Date(nowT - 86400000 * 1) });
  }
  
  // Sort and render
  events.sort((a,b) => b.date - a.date);
  
- events.forEach(ev => {
+ (events || []).forEach(ev => {
   timelineEl.innerHTML += `
    <div class="timeline-item">
     <div style="font-weight: 500; color: #e2e8f0; font-size: 14px;">${ev.text}</div>
@@ -503,7 +503,7 @@ function updatePipelineStats() {
  const counts = { 'New Signup': 0, 'Active User': 0, 'Premium Prospect': 0, 'Enterprise Client': 0, 'Loyal Customer': 0 };
  let premiumCount = 0;
  let enterpriseCount = 0;
- saasCustomers.forEach(customer => {
+ (saasCustomers || []).forEach(customer => {
   if (counts[customer.status] !== undefined) counts[customer.status]++;
   if (customer.subscriptionPlan === 'pro' || customer.subscriptionPlan === 'enterprise') premiumCount++;
   if (customer.subscriptionPlan === 'enterprise') enterpriseCount++;
@@ -514,8 +514,8 @@ function updatePipelineStats() {
  if (document.getElementById('countPremium')) document.getElementById('countPremium').textContent = counts['Premium Prospect'];
  if (document.getElementById('countEnterprise')) document.getElementById('countEnterprise').textContent = counts['Enterprise Client'];
  if (document.getElementById('countLoyal')) document.getElementById('countLoyal').textContent = counts['Loyal Customer'];
- if (document.getElementById('kpiTotalStartups')) document.getElementById('kpiTotalStartups').textContent = saasCustomers.length;
- const activeCount = saasCustomers.filter(c => c.activityLevel !== 'Inactive').length;
+ if (document.getElementById('kpiTotalStartups')) document.getElementById('kpiTotalStartups').textContent = (saasCustomers || []).length;
+ const activeCount = (saasCustomers || []).filter(c => c.activityLevel !== 'Inactive').length;
  if (document.getElementById('kpiActiveUsers')) document.getElementById('kpiActiveUsers').textContent = activeCount;
  if (document.getElementById('kpiPremium')) document.getElementById('kpiPremium').textContent = premiumCount;
  if (document.getElementById('kpiEnterprise')) document.getElementById('kpiEnterprise').textContent = enterpriseCount;
@@ -527,14 +527,14 @@ function renderCRMCharts() {
  if (ctxGrowth) {
   if (charts.userGrowth) charts.userGrowth.destroy();
   charts.userGrowth = new Chart(ctxGrowth, {
-   type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Signups', data: [12, 19, 35, 48, 62, Math.max(70, saasCustomers.length * 5)], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 }] },
+   type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Signups', data: [12, 19, 35, 48, 62, Math.max(70, (saasCustomers || []).length * 5)], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 }] },
    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Startup Growth', color: '#f8fafc', font: { family: "'Google Sans', sans-serif", size: 14 } } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } } }
   });
  }
  const ctxCat = document.getElementById('startupCategoriesChart');
  if (ctxCat) {
   const industries = {};
-  saasCustomers.forEach(c => { const ind = c.startupIndustry || 'Other'; industries[ind] = (industries[ind] || 0) + 1; });
+  (saasCustomers || []).forEach(c => { const ind = c.startupIndustry || 'Other'; industries[ind] = (industries[ind] || 0) + 1; });
   if (charts.startupCategories) charts.startupCategories.destroy();
   charts.startupCategories = new Chart(ctxCat, {
    type: 'doughnut', data: { labels: Object.keys(industries), datasets: [{ data: Object.values(industries), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'], borderWidth: 0, hoverOffset: 4 }] },
@@ -544,7 +544,7 @@ function renderCRMCharts() {
  const ctxPlan = document.getElementById('subscriptionDistributionChart');
  if (ctxPlan) {
   const plans = { 'Free': 0, 'Pro': 0, 'Enterprise': 0 };
-  saasCustomers.forEach(c => { if (c.subscriptionPlan === 'enterprise') plans['Enterprise']++; else if (c.subscriptionPlan === 'pro') plans['Pro']++; else plans['Free']++; });
+  (saasCustomers || []).forEach(c => { if (c.subscriptionPlan === 'enterprise') plans['Enterprise']++; else if (c.subscriptionPlan === 'pro') plans['Pro']++; else plans['Free']++; });
   if (charts.subscriptionDistribution) charts.subscriptionDistribution.destroy();
   charts.subscriptionDistribution = new Chart(ctxPlan, {
    type: 'pie', data: { labels: Object.keys(plans), datasets: [{ data: Object.values(plans), backgroundColor: ['#64748b', '#10b981', '#8b5cf6'], borderWidth: 0, hoverOffset: 4 }] },
@@ -554,7 +554,7 @@ function renderCRMCharts() {
  const ctxAi = document.getElementById('aiModuleUsageChart');
  if (ctxAi) {
   let forecastUses = 0; let campaignUses = 0; let segmentationUses = 0; let crmUses = 0;
-  saasCustomers.forEach(c => { forecastUses += (c.forecastsCreated || 0); campaignUses += (c.campaignsCreated || 0); segmentationUses += (c.segmentationReports || 0); crmUses += (c.crmInteractions || 0); });
+  (saasCustomers || []).forEach(c => { forecastUses += (c.forecastsCreated || 0); campaignUses += (c.campaignsCreated || 0); segmentationUses += (c.segmentationReports || 0); crmUses += (c.crmInteractions || 0); });
   if (charts.aiModuleUsage) charts.aiModuleUsage.destroy();
   charts.aiModuleUsage = new Chart(ctxAi, {
    type: 'bar', data: { labels: ['Forecasts', 'Campaigns', 'Segmentation', 'CRM'], datasets: [{ label: 'Platform Events', data: [Math.max(forecastUses, 12), Math.max(campaignUses, 8), Math.max(segmentationUses, 5), Math.max(crmUses, 15)], backgroundColor: '#3b82f6', borderRadius: 4 }] },

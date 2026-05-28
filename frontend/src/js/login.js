@@ -20,6 +20,12 @@ window.initLogin = function() {
         
         const email = emailInput.value.trim();
         const password = passwordInput.value;
+        
+        if (!email.includes('@')) {
+            loginInProgress = false;
+            return alert('Please enter a valid email address');
+        }
+
         if(!email || !password) {
             loginInProgress = false;
             return alert('Enter email and password');
