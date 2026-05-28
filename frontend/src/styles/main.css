@@ -802,3 +802,21 @@ tbody tr:hover { background: rgba(99,102,241,0.05); }
   transform: scale(1.02);
   opacity: 0.9;
 }
+
+/* Profile Icon Hover Effects */
+.profile-icon {
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.profile-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.6) !important;
+}
+
+/* Profile Icon Hover Effects */
+.profile-icon {
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.profile-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.6) !important;
+}

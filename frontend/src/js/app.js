@@ -28,16 +28,23 @@ function updateAuthUI() {
  const signInBtn = document.getElementById('signInBtn');
  const loggedInState = document.getElementById('loggedInState');
  const profileIcon = document.getElementById('profileIcon');
- 
+
  if (!signInBtn || !loggedInState) return;
- 
+
  if (Auth.isLoggedIn()) {
-  const user = Auth.getUser();
+  const user = Auth.getUser() || {};
+  const userName = user.name || 'User';
+  const initials = userName.split(' ').filter(w => w).map(w => w[0]).join('').substring(0,2).toUpperCase();
+
   signInBtn.style.display = 'none';
   loggedInState.style.display = 'flex';
-  if (profileIcon && user.initials) {
-   profileIcon.textContent = user.initials;
-   profileIcon.title = user.name || 'Profile';
+  
+  if (profileIcon) {
+   profileIcon.textContent = initials;
+   profileIcon.title = userName || 'Profile';
+   profileIcon.onclick = () => {
+     window.location.hash = '#/settings';
+   };
   }
  } else {
   signInBtn.style.display = 'inline-flex';

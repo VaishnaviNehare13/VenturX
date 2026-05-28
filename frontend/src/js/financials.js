@@ -186,7 +186,17 @@ function initFinActivityFeed() {
     const notifications = window.PlatformData.notifications.slice(0, 6);
     
     if ((notifications || []).length === 0) {
-      feed.innerHTML = '<div class="muted" style="font-size: 13px; text-align: center; padding: 20px;">No platform activity yet.</div>';
+      feed.innerHTML = `
+        <div class="empty-state" style="text-align: center; padding: 32px 16px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px dashed rgba(139,92,246,0.3);">
+          <div style="font-size: 32px; margin-bottom: 12px; color: #8b5cf6; text-shadow: 0 0 16px rgba(139,92,246,0.4);">
+            <i data-lucide="activity"></i>
+          </div>
+          <h4 style="margin: 0 0 8px 0; font-size: 15px; color: #f8fafc; font-weight: 600;">No Financial Activity Yet</h4>
+          <p class="muted" style="font-size: 13px; margin: 0 auto 20px auto; max-width: 250px; line-height: 1.5;">Live financial events and AI-generated business updates will appear here.</p>
+          <button class="btn-premium" style="font-size: 12px; padding: 8px 16px; background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none;" onclick="window.location.hash='#/forecasting'">Generate First Forecast</button>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
       return;
     }
 
