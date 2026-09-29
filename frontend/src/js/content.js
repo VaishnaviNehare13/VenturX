@@ -92,9 +92,12 @@ function loadContentData() {
 }
 
 function saveData(key, data) {
- window.PlatformData.content.drafts = contentDrafts;
- window.PlatformData.content.schedule = contentSchedule;
- window.PlatformData.content.comments = contentComments;
+ if (!window.PlatformData.content || Array.isArray(window.PlatformData.content)) {
+   window.PlatformData.content = { drafts: [], schedule: [], comments: [] };
+ }
+ window.PlatformData.content.drafts = Array.isArray(contentDrafts) ? contentDrafts.slice(-20) : [];
+ window.PlatformData.content.schedule = Array.isArray(contentSchedule) ? contentSchedule.slice(-20) : [];
+ window.PlatformData.content.comments = Array.isArray(contentComments) ? contentComments.slice(-20) : [];
  
  window.PlatformEngine.logActivity('content', `Content updated`);
  window.PlatformEngine.savePlatformData("content");
@@ -206,7 +209,7 @@ function clearEditor() {
 
 async function saveContentHub(data) {
 
-    const response = await fetch('http://127.0.0.1:5000/api/contenthub/save', {
+    const response = await fetch('/api/contenthub/save', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

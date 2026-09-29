@@ -286,7 +286,7 @@ async function saveUserAnalytics() {
             ai_insights: ["Dashboard synced successfully."]
         };
 
-        const response = await fetch('http://127.0.0.1:5000/api/user_analytics/save', {
+        const response = await fetch('/api/user_analytics/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -316,7 +316,7 @@ async function loadDashboard() {
 
         console.log("Loading dashboard for:", email);
 
-        const response = await fetch(`http://127.0.0.1:5000/api/dashboard/${email}`);
+        const response = await fetch(`/api/dashboard/${encodeURIComponent(email)}`);
         if (!response.ok) throw new Error("Dashboard API error");
         const json = await response.json();
         

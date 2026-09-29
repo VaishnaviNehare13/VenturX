@@ -1,7 +1,7 @@
 
 async function saveBranding(data) {
 
-    const response = await fetch('http://127.0.0.1:5000/api/branding/save', {
+    const response = await fetch('/api/branding/save', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -122,7 +122,9 @@ async function generateBrandIdentity() {
     svgLogo
   };
 
+  if (!Array.isArray(window.PlatformData.branding)) window.PlatformData.branding = [];
   window.PlatformData.branding.push(brandData);
+  if (window.PlatformData.branding.length > 20) window.PlatformData.branding = window.PlatformData.branding.slice(-20);
   window.PlatformEngine.logActivity('branding', `Brand identity generated for ${startupName}`);
   window.PlatformEngine.savePlatformData("branding");
 

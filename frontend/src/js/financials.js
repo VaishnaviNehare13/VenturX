@@ -100,12 +100,12 @@ async function _coreInitFinancials() {
       if (valueDiv) valueDiv.textContent = '₹' + Math.round(res.predicted_profit).toLocaleString('en-IN');
       if (textDiv) textDiv.innerHTML = `Model: ${res.model}<br>R² Score: ${res.r2_score || 0.978}`;
       
-      if (!window.PlatformData.financials) window.PlatformData.financials = [];
-      (window.PlatformData.financials || []).push({
+      if (!Array.isArray(window.PlatformData.financials)) window.PlatformData.financials = [];
+      window.PlatformData.financials = [{
         type: 'prediction',
         inputs: { rd, admin, mkt },
         result: res
-      });
+      }];
       window.PlatformEngine.logActivity('financial', `Profit prediction run: ₹${Math.round(res.predicted_profit).toLocaleString('en-IN')}`);
       
       window.PlatformEngine.savePlatformData("financials");
@@ -128,14 +128,17 @@ async function _coreInitFinancials() {
       console.log("SAVING FINANCIALS:", financialPayload);
 
       try {
-          const saveResponse = await window.apiRequest(
-              '/api/financials/save',
-              {
-                  method: 'POST',
-                  body: JSON.stringify(financialPayload)
-              }
-          );
-          console.log("FINANCIAL SAVE RESPONSE:", saveResponse);
+          const apiCaller = window.apiRequest || (typeof apiRequest === 'function' ? apiRequest : null);
+          if (apiCaller) {
+              const saveResponse = await apiCaller(
+                  '/api/financials/save',
+                  {
+                      method: 'POST',
+                      body: JSON.stringify(financialPayload)
+                  }
+              );
+              console.log("FINANCIAL SAVE RESPONSE:", saveResponse);
+          }
       } catch (err) {
           console.error("FINANCIAL API ERROR:", err);
       }
@@ -269,7 +272,7 @@ async function loadFinancials() {
         
         console.log("Loading financials for:", email);
         
-        const response = await fetch(`http://127.0.0.1:5000/api/financials/${encodeURIComponent(email)}`);
+        const response = await fetch(`/api/financials/${encodeURIComponent(email)}`);
         const result = await response.json();
         
         console.log("Financial API Response:", result);

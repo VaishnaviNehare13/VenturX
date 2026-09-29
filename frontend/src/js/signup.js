@@ -50,7 +50,7 @@ window.initSignup = function () {
 
             // SEND TO FLASK BACKEND
             const response = await fetch(
-                "http://127.0.0.1:5000/api/signup",
+                "/api/signup",
                 {
                     method: "POST",
                     headers: {

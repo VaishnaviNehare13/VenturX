@@ -3,7 +3,7 @@
  * Handles all communication with the Express API / Python ML Microservice
  */
 
-const API_BASE = "http://127.0.0.1:5000";
+const API_BASE = "";
 
 // Request timeout configuration
 const TIMEOUT = 60000;
@@ -250,6 +250,7 @@ const Utils = {
 // Export API modules
 // ═══════════════════════════════════════════════════════════════════════════════
 
+window.apiRequest = apiRequest;
 window.API = {
  Health: HealthAPI,
  Segmentation: SegmentationAPI,

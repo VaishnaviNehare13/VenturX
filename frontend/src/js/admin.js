@@ -290,7 +290,7 @@ function renderUsers(mongoUsers) {
 
 async function loadUsers() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/users");
+        const response = await fetch("/api/users");
         if (!response.ok) throw new Error("API response not OK");
         const users = await response.json();
         console.log("Live MongoDB Users:", users);
@@ -319,7 +319,7 @@ function renderMongoSubscriptions(mongoSubs) {
 
 async function loadSubscriptions() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/subscriptions");
+        const response = await fetch("/api/subscriptions");
         if (!response.ok) throw new Error("API response not OK");
         const subs = await response.json();
         console.log("Subscriptions Loaded:", subs);
@@ -348,7 +348,7 @@ function renderMongoAnalytics(mongoAnalytics) {
 
 async function loadAnalytics() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/analytics");
+        const response = await fetch("/api/analytics");
         if (!response.ok) throw new Error("API response not OK");
         const analytics = await response.json();
         console.log("AI Analytics Loaded:", analytics);
@@ -377,7 +377,7 @@ function renderMongoRecommendations(mongoRecommendations) {
 
 async function loadRecommendations() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/recommendations");
+        const response = await fetch("/api/recommendations");
         if (!response.ok) throw new Error("API response not OK");
         const recommendations = await response.json();
         console.log("Recommendations Loaded:", recommendations);
@@ -406,7 +406,7 @@ function renderPlatformHealth(healthData) {
 
 async function loadPlatformHealth() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/platform-health");
+        const response = await fetch("/api/platform-health");
         if (!response.ok) throw new Error("API response not OK");
         const health = await response.json();
         console.log("Platform Health Loaded:", health);
@@ -435,7 +435,7 @@ function renderMongoReports(reports) {
 
 async function loadReports() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/reports");
+        const response = await fetch("/api/reports");
         if (!response.ok) throw new Error("API response not OK");
         const reports = await response.json();
         console.log("Reports Loaded:", reports);
@@ -463,7 +463,7 @@ function renderMongoSettings(settings) {
 
 async function loadSettings() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/settings");
+        const response = await fetch("/api/settings");
         if (!response.ok) throw new Error("API response not OK");
         const settings = await response.json();
         console.log("Settings Loaded:", settings);
@@ -486,7 +486,7 @@ async function saveSettings(updates) {
         });
         
         const settingId = updatedSettings._id;
-        const endpoint = settingId ? `http://127.0.0.1:5000/api/settings/${settingId}` : "http://127.0.0.1:5000/api/settings";
+        const endpoint = settingId ? `/api/settings/${settingId}` : "/api/settings";
         const method = settingId ? "PUT" : "POST";
         
         const response = await fetch(endpoint, {
@@ -710,7 +710,7 @@ window.LiveOverviewData = null;
 
 async function loadOverview() {
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/admin/overview");
+        const response = await fetch("/api/admin/overview");
         if (!response.ok) throw new Error("API response not OK");
         const data = await response.json();
         
@@ -1779,7 +1779,7 @@ window.generateReport = async function() {
     const payload = payloads[Math.floor(Math.random() * payloads.length)];
     
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/reports", {
+        const response = await fetch("/api/reports", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -1796,7 +1796,7 @@ window.generateReport = async function() {
 window.deleteReport = async function(id) {
     if (!confirm("Are you sure you want to delete this report?")) return;
     try {
-        const response = await fetch("http://127.0.0.1:5000/api/reports/" + id, { method: "DELETE" });
+        const response = await fetch("/api/reports/" + id, { method: "DELETE" });
         if (response.ok) {
             console.log("Report Deleted:", id);
             loadReports();

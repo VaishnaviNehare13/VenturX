@@ -431,6 +431,36 @@ app.post('/api/branding/generate', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Generic API Gateway Proxy - Forward all unhandled /api/* requests to Flask API
+// ═══════════════════════════════════════════════════════════════════════════════
+app.all('/api/*', async (req, res) => {
+  try {
+    const targetUrl = `${ML_SERVICE_URL}${req.originalUrl}`;
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: {
+        'Content-Type': req.headers['content-type'] || 'application/json'
+      },
+      timeout: 60000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      console.error(`Gateway proxy error for ${req.method} ${req.originalUrl}:`, error.message);
+      res.status(502).json({
+        success: false,
+        error: 'ML Backend Service Unavailable',
+        message: error.message
+      });
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SPA Fallback - Serve index.html for all non-API routes
 // ═══════════════════════════════════════════════════════════════════════════════
 app.get('*', (req, res) => {

@@ -71,15 +71,11 @@ function getChartColors() {
   warning: '#f59e0b',
   info: '#06b6d4'
  };
-
- if (activityFeedInterval) { clearInterval(activityFeedInterval); activityFeedInterval = null; }
- if (kpiDetailChartInstance) { kpiDetailChartInstance.destroy(); kpiDetailChartInstance = null; }
-
 }
 
 async function updateAnalyticsKPIs() {
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/analytics/overview');
+        const response = await fetch('/api/analytics/overview');
         if (!response.ok) { throw new Error("API failed"); }
         const json = await response.json();
         const data = json.success ? json.data : {
@@ -715,8 +711,6 @@ const activityEvents = [
 }
 
  window.initAnalyticsPage = function() {
-  console.log("LIVE MONGO CHART DATA:", window.LiveMongoPayload);
-  
   let chartData = window.LiveMongoPayload?.charts || window.LiveMongoPayload?.analytics || window.LiveMongoPayload?.metrics || [];
   if (!Array.isArray(chartData)) {
       chartData = [];

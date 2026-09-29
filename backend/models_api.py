@@ -68,8 +68,8 @@ def signup():
 
     if request.method == 'OPTIONS':
         response = jsonify({"status": "ok"})
-        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
         response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
         return response, 200
 
@@ -2076,61 +2076,68 @@ def save_user_analytics():
 @app.route('/api/analytics/overview', methods=['GET'])
 def analytics_overview():
     try:
-        # Aggregation logic
+        def _safe_metric(val, default=0.0):
+            if val is None:
+                return default
+            try:
+                if isinstance(val, (int, float)):
+                    return float(val)
+                cleaned = str(val).replace('$', '').replace('₹', '').replace(',', '').strip()
+                return float(cleaned) if cleaned else default
+            except (ValueError, TypeError):
+                return default
+
         # 1. users
-        total_users = users_collection.count_documents({})
+        total_users = users_collection.count_documents({}) if users_collection is not None else 0
         
-        # 2. startup_growth
-        # Just return active subscriptions from user_analytics or calculate percentage
-        # We will calculate average retention_rate from user_analytics
-        user_an_docs = list(user_analytics_collection.find({}))
+        # 2. startup_growth & user analytics
+        user_an_docs = list(user_analytics_collection.find({})) if user_analytics_collection is not None else []
         
         if user_an_docs:
-            customer_retention = sum(d.get("retention_rate", 0) for d in user_an_docs) / len(user_an_docs)
-            ai_tool_usage = sum(d.get("ai_confidence", 0) for d in user_an_docs) # approximate usage proxy
-            revenue_growth = sum(d.get("total_revenue", 0) for d in user_an_docs)
-            startup_growth = sum(d.get("active_subscriptions", 0) for d in user_an_docs)
+            ret_vals = [_safe_metric(d.get("retention_rate")) for d in user_an_docs if d]
+            customer_retention = (sum(ret_vals) / len(ret_vals)) if ret_vals else 0.0
+            ai_tool_usage = sum(_safe_metric(d.get("ai_confidence")) for d in user_an_docs if d)
+            revenue_growth = sum(_safe_metric(d.get("total_revenue")) for d in user_an_docs if d)
+            startup_growth = sum(_safe_metric(d.get("active_subscriptions")) for d in user_an_docs if d)
         else:
-            customer_retention = 0
-            ai_tool_usage = 0
-            revenue_growth = 0
-            startup_growth = 0
+            customer_retention = 0.0
+            ai_tool_usage = 0.0
+            revenue_growth = 0.0
+            startup_growth = 0.0
 
         # 3. campaigns_collection
-        camp_docs = list(campaigns_collection.find({}))
+        camp_docs = list(campaigns_collection.find({})) if campaigns_collection is not None else []
         if camp_docs:
-            campaign_reach = sum(float(c.get("impressions", c.get("reach", 0))) for c in camp_docs)
+            campaign_reach = sum(_safe_metric(c.get("impressions") if c.get("impressions") is not None else c.get("reach")) for c in camp_docs if c)
         else:
-            campaign_reach = 0
+            campaign_reach = 0.0
             
         # 4. financials_collection
-        fin_docs = list(financials_collection.find({}))
+        fin_docs = list(financials_collection.find({})) if financials_collection is not None else []
         if fin_docs:
-            # Add financials revenue if available
-            revenue_growth += sum(float(f.get("total_revenue", 0)) for f in fin_docs)
+            revenue_growth += sum(_safe_metric(f.get("total_revenue")) for f in fin_docs if f)
 
         # 5. crm_collection
-        crm_docs = list(crm_collection.find({}))
+        crm_docs = list(crm_collection.find({})) if crm_collection is not None else []
         if crm_docs:
-            # Overwrite total_users if CRM is heavily populated, or combine
             total_users += len(crm_docs)
             
         return jsonify({
             "success": True,
             "data": {
-                "total_users": total_users,
-                "startup_growth": startup_growth,
-                "ai_tool_usage": ai_tool_usage,
+                "total_users": int(total_users),
+                "startup_growth": int(startup_growth),
+                "ai_tool_usage": int(ai_tool_usage),
                 "customer_retention": round(customer_retention, 2),
-                "campaign_reach": campaign_reach,
-                "revenue_growth": revenue_growth
+                "campaign_reach": int(campaign_reach),
+                "revenue_growth": round(revenue_growth, 2)
             }
-        })
-    except Exception as e:
-        print("ANALYTICS OVERVIEW ERROR:", str(e))
+        }), 200
+    except Exception as err:
+        print("Analytics overview failed:", err)
         return jsonify({
             "success": False,
-            "error": str(e),
+            "error": "Analytics data temporarily unavailable",
             "data": {
                 "total_users": 0,
                 "startup_growth": 0,
@@ -2353,5 +2360,6 @@ if __name__ == '__main__':
 
 
 
-    print(" Starting AI Models & Dashboard Aggregation API on port 5000...")
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    print(f" Starting AI Models & Dashboard Aggregation API on port {port}...")
+    app.run(host="0.0.0.0", port=port, debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true")

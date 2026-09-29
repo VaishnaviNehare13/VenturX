@@ -124,7 +124,7 @@ async function bootstrap() {
   if (session.role !== "admin" && session.email) {
       try {
           console.log("Fetching live user payload for:", session.email);
-          const endpoint = `http://127.0.0.1:5000/api/users/${session.email}`;
+          const endpoint = `/api/users/${encodeURIComponent(session.email)}`;
           console.log("Active dashboard API:", endpoint);
           const response = await fetch(endpoint);
           const json = await response.json();
