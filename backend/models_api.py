@@ -273,6 +273,29 @@ def handle_users():
 
 
 # ─────────────────────────────────────
+# CRM API
+# ─────────────────────────────────────
+
+@app.route('/api/crm', methods=['GET', 'POST', 'OPTIONS'])
+def handle_crm_collection():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+
+    try:
+        if request.method == 'GET':
+            print("CRM API Hit Successfully")
+            crm_items = list(crm_collection.find({}, {"password": 0}))
+            for item in crm_items:
+                item["_id"] = str(item["_id"])
+            return jsonify({
+                "success": True,
+                "crm": crm_items
+            }), 200
+    except Exception as e:
+        print("CRM API ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ─────────────────────────────────────
 # SUBSCRIPTIONS API
 # ─────────────────────────────────────
 

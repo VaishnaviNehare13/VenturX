@@ -14,38 +14,52 @@ window.AdminEngine = (function() {
   function _getFreshMetrics() {
     if (cachedMetrics) return cachedMetrics;
 
-    const pd = window.PlatformData || {};
-    const crm = pd.crm || [];
-    const campaigns = pd.campaigns || [];
-    const aiUsage = pd.aiUsage || [];
-    const recMetrics = pd.recommendationMetrics || { generated: 0, accepted: 0, dismissed: 0, highestConfidence: [], mostTriggered: [] };
-    const activityFeed = pd.activityFeed || [];
-    const forecasts = pd.forecasts || [];
-    const segs = pd.segmentation || [];
+    const pd = (window.PlatformData && typeof window.PlatformData === 'object') ? window.PlatformData : {};
+    const crm = Array.isArray(pd.crm) ? pd.crm : [];
+    const campaigns = Array.isArray(pd.campaigns) ? pd.campaigns : [];
+    const aiUsage = Array.isArray(pd.aiUsage) ? pd.aiUsage : [];
+    const recMetrics = (pd.recommendationMetrics && typeof pd.recommendationMetrics === 'object') 
+      ? pd.recommendationMetrics 
+      : { generated: 0, accepted: 0, dismissed: 0, highestConfidence: [], mostTriggered: [] };
+    const activityFeed = Array.isArray(pd.activityFeed) ? pd.activityFeed : [];
+    const forecasts = Array.isArray(pd.forecasts) ? pd.forecasts : [];
+    const segs = Array.isArray(pd.segmentation) ? pd.segmentation : [];
 
     // Derive deeper insights for each account
-    const activeAccounts = crm.map((c, index) => {
-        // Pseudo-randomize some metrics based on account ID for demo consistency, or use real lengths
-        const plan = c.subscriptionPlan === 'enterprise' ? 'Enterprise' : (c.subscriptionPlan === 'pro' ? 'Growth' : 'Starter');
+    const activeAccounts = crm
+      .map((c, index) => {
+        if (!c || typeof c !== 'object') {
+          console.warn(`CRM data missing for account/user: item_${index}`);
+          return null;
+        }
+
+        const id = c.id || c._id || `acc_${index}`;
+        if (!c.email && !c.startupName && !c.fullName && !c.name) {
+          console.warn(`CRM data missing for account/user: ${id}`);
+        }
+
+        const plan = c.subscriptionPlan === 'enterprise' ? 'Enterprise' : (c.subscriptionPlan === 'pro' ? 'Growth' : (c.plan || 'Starter'));
         const planMultiplier = plan === 'Enterprise' ? 3 : (plan === 'Growth' ? 2 : 1);
         
         // Distribute campaigns & AI usage across accounts
-        const userCampaigns = campaigns.filter(camp => (camp.id && camp.id.includes(c.id)) || (index === 0 && camp));
+        const userCampaigns = campaigns.filter(camp => camp && ((camp.id && String(camp.id).includes(String(id))) || (index === 0 && camp)));
         const userAiCount = aiUsage.length ? Math.floor(aiUsage.length / Math.max(crm.length, 1)) * planMultiplier + (index % 5) : (index * 12 * planMultiplier);
         
-        const rev = plan === 'Enterprise' ? 25000 : (plan === 'Growth' ? 8000 : 2000);
+        const rev = (c.revenue !== undefined && c.revenue !== null && !isNaN(parseFloat(c.revenue)))
+          ? parseFloat(c.revenue)
+          : (plan === 'Enterprise' ? 25000 : (plan === 'Growth' ? 8000 : 2000));
         
         const engagementScore = Math.min(100, Math.max(10, userAiCount + userCampaigns.length * 5));
         const churnRisk = engagementScore < 30 ? (plan === 'Starter' ? 'High' : 'Medium') : 'Low';
         
         return {
-            id: c.id,
-            name: c.startupName || c.fullName || 'Unknown Workspace',
-            email: c.email,
+            id: id,
+            name: c.startupName || c.fullName || c.name || (c.email ? c.email.split('@')[0] : 'Unknown Workspace'),
+            email: c.email || 'no-email@workspace.io',
             plan: plan,
             status: c.status || 'Active',
             lastActive: c.lastActive ? new Date(c.lastActive).toLocaleDateString() : 'Just now',
-            industry: c.startupIndustry || 'Tech',
+            industry: c.startupIndustry || c.industry || 'Tech',
             metrics: {
               activeCampaigns: userCampaigns.length || Math.floor(Math.random() * 5 * planMultiplier),
               aiUsageScore: engagementScore,
@@ -55,28 +69,29 @@ window.AdminEngine = (function() {
               totalSegments: index === 0 ? segs.length : Math.floor(Math.random() * 2)
             }
         };
-    });
+      })
+      .filter(Boolean);
 
     const totalUsers = Math.max(activeAccounts.length, 1);
-    const activeWorkspaces = activeAccounts.filter(a => a.status !== 'Inactive' && a.status !== 'Churned').length || 1;
+    const activeWorkspaces = activeAccounts.filter(a => a && a.status !== 'Inactive' && a.status !== 'Churned').length || 1;
 
     // Subscriptions
     const subscriptions = {
-      Starter: activeAccounts.filter(a => a.plan === 'Starter').length,
-      Growth: activeAccounts.filter(a => a.plan === 'Growth').length,
-      Enterprise: activeAccounts.filter(a => a.plan === 'Enterprise').length,
-      mrr: activeAccounts.reduce((sum, a) => sum + a.metrics.revenueContribution, 0) || window.PlatformEngine?.calculateMRR() || 0,
-      churnRate: (activeAccounts.filter(a => a.metrics.churnRisk === 'High').length / Math.max(totalUsers, 1) * 100).toFixed(1) || 1.2
+      Starter: activeAccounts.filter(a => a && a.plan === 'Starter').length,
+      Growth: activeAccounts.filter(a => a && a.plan === 'Growth').length,
+      Enterprise: activeAccounts.filter(a => a && a.plan === 'Enterprise').length,
+      mrr: activeAccounts.reduce((sum, a) => sum + (a?.metrics?.revenueContribution || 0), 0) || window.PlatformEngine?.calculateMRR?.() || 0,
+      churnRate: (activeAccounts.filter(a => a?.metrics?.churnRisk === 'High').length / Math.max(totalUsers, 1) * 100).toFixed(1) || '1.2'
     };
 
-    let totalAiRequests = aiUsage.length || activeAccounts.reduce((sum, a) => sum + a.metrics.aiUsageScore, 0);
+    let totalAiRequests = aiUsage.length || activeAccounts.reduce((sum, a) => sum + (a?.metrics?.aiUsageScore || 0), 0);
     let segRuns = segs.length || 0;
     let forExecs = forecasts.length || 0;
     let campOpts = campaigns.length || 0;
 
     // AI Summary
-    const highGrowth = activeAccounts.filter(a => a.metrics.aiUsageScore > 80).length;
-    const churnRisks = activeAccounts.filter(a => a.metrics.churnRisk === 'High').length;
+    const highGrowth = activeAccounts.filter(a => (a?.metrics?.aiUsageScore || 0) > 80).length;
+    const churnRisks = activeAccounts.filter(a => a?.metrics?.churnRisk === 'High').length;
     const execSummary = `VenturX AI detected ${highGrowth} high-growth workspaces and ${churnRisks} churn-risk accounts.`;
 
     cachedMetrics = {
@@ -101,7 +116,7 @@ window.AdminEngine = (function() {
           'Prophet (Time Series)': forExecs,
           'K-Means (Clustering)': segRuns,
           'XGBoost (Conversion)': campOpts,
-          'LLM (Generative)': totalAiRequests - (forExecs + segRuns + campOpts)
+          'LLM (Generative)': Math.max(0, totalAiRequests - (forExecs + segRuns + campOpts))
         }
       },
       recommendations: recMetrics,

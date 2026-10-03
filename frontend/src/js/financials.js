@@ -15,6 +15,7 @@ window.applyFinancialFilter = function() {
 window.initFinancialsPage = async function () {
    try {
       console.log("Financials Safe Init");
+      await loadFinancials();
       await _coreInitFinancials();
    } catch(err) {
       console.error("Financials failed safely", err);
@@ -310,8 +311,3 @@ async function loadFinancials() {
         console.error("Financial load failed:", error);
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    loadFinancials();
-    if (window.location.hash === '#/financials') initFinancialsPage();
-});

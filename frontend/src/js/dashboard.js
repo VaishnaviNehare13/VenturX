@@ -12,7 +12,7 @@ window.initDashboardPage = function() {
     if (sessionStr) {
         try {
             const session = JSON.parse(sessionStr);
-            if (!session.name || !session.email) {
+            if (!session.name || !session.email || (session.isLoggedIn !== true && session.isLoggedIn !== "true")) {
                 localStorage.removeItem("venturx_session");
                 window.location.hash = "#/login";
                 return;

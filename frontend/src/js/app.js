@@ -9,20 +9,139 @@ async function loadComponent(selector, path) {
 
 // Authentication state
 const Auth = {
- isLoggedIn: () => localStorage.getItem('venturx_session') !== null,
- getUser: () => JSON.parse(localStorage.getItem('venturx_session') || '{}'),
+ isLoggedIn: () => {
+  try {
+   const sessionStr = localStorage.getItem('venturx_session');
+   if (!sessionStr) return false;
+   const session = JSON.parse(sessionStr);
+   return Boolean(session && (session.isLoggedIn === true || session.isLoggedIn === 'true') && session.email);
+  } catch (e) {
+   return false;
+  }
+ },
+ getUser: () => {
+  try {
+   const sessionStr = localStorage.getItem('venturx_session');
+   if (!sessionStr) return null;
+   return JSON.parse(sessionStr);
+  } catch (e) {
+   return null;
+  }
+ },
  login: (session) => {
-  console.log("SESSION WRITE:", session);
-  localStorage.setItem('venturx_session', JSON.stringify(session));
+  const sessionData = { ...session, isLoggedIn: true };
+  localStorage.setItem('venturx_session', JSON.stringify(sessionData));
+  console.log("[Auth] Login successful");
+  console.log("[Auth] Session write:", sessionData);
   updateAuthUI();
  },
  logout: () => {
-  console.log("SESSION UPDATED: LOGGED OUT");
+  console.log("[Auth] Logout started");
+  
+  // 1. Clear session storage & local storage
   localStorage.removeItem('venturx_session');
+  localStorage.removeItem('userProfile');
+  localStorage.removeItem('startup_session');
+  sessionStorage.clear();
+  
+  // 2. Clear state / caches / global datasets
+  window.LiveMongoPayload = null;
+  window.LiveMongoDashboard = {};
+  window.LiveMongoUsers = [];
+  window.LiveMongoCRM = [];
+  window.LiveMongoSubscriptions = [];
+  window.LiveMongoAnalytics = [];
+  window.LiveMongoRecommendations = [];
+  window.LivePlatformHealth = null;
+  window.LiveOverviewData = null;
+  window.PlatformData = {
+    users: [],
+    crm: [],
+    campaigns: [],
+    forecasts: [],
+    recommendations: [],
+    subscriptions: [],
+    notifications: [],
+    aiUsage: [],
+    segmentation: [],
+    branding: [],
+    content: [],
+    analytics: [],
+    financials: [],
+    activityFeed: [],
+    reports: [],
+    settings: {},
+    accounts: [],
+    workspaces: [],
+    recommendationMetrics: { generated: 0, accepted: 0, dismissed: 0, highestConfidence: [], mostTriggered: [] }
+  };
+
+  // 3. Clear running intervals in AdminState if any
+  if (window.AdminState) {
+    if (window.AdminState.liveInterval) {
+      clearInterval(window.AdminState.liveInterval);
+      window.AdminState.liveInterval = null;
+    }
+    if (window.AdminState.healthInterval) {
+      clearInterval(window.AdminState.healthInterval);
+      window.AdminState.healthInterval = null;
+    }
+    if (window.AdminState.overviewInterval) {
+      clearInterval(window.AdminState.overviewInterval);
+      window.AdminState.overviewInterval = null;
+    }
+    localStorage.removeItem('admin_currentTab');
+  }
+
+  // 4. Destroy charts if any
+  if (window.Chart) {
+    for (let id in Chart.instances) {
+      Chart.instances[id].destroy();
+    }
+  }
+  if (window.AdminUI && window.AdminUI.destroyAllCharts) {
+    window.AdminUI.destroyAllCharts();
+  }
+
+  console.log("[Auth] Session cleared");
   updateAuthUI();
-  Router.navigate('#/login');
+
+  // 5. Navigate cleanly to #/login with replace to avoid reopening via Back button
+  console.log("[Router] Navigating to #/login");
+  window.currentRoute = '';
+  if (window.location.hash === '#/login') {
+    if (window.Router && window.Router.navigate) {
+      window.Router.navigate('#/login');
+    }
+  } else {
+    window.location.replace('#/login');
+  }
  }
 };
+
+window.Auth = Auth;
+
+// Helper to fetch live user payload on-demand when visiting authenticated modules
+async function ensureLiveUserPayload() {
+ if (!Auth.isLoggedIn()) return;
+ const session = Auth.getUser();
+ if (session && session.email && (!window.LiveMongoPayload || !window.LiveMongoPayload.user)) {
+  try {
+   console.log("[Data] Fetching live user payload for:", session.email);
+   const endpoint = `/api/users/${encodeURIComponent(session.email)}`;
+   console.log("[Data] Active user API:", endpoint);
+   const response = await fetch(endpoint);
+   const json = await response.json();
+   if (json.success) {
+    window.LiveMongoPayload = json;
+    window.PlatformData = json;
+   }
+  } catch (e) {
+   console.error("[Data] Failed to fetch live payload:", e);
+  }
+ }
+}
+window.ensureLiveUserPayload = ensureLiveUserPayload;
 
 function updateAuthUI() {
  const signInBtn = document.getElementById('signInBtn');
@@ -33,8 +152,8 @@ function updateAuthUI() {
 
  if (Auth.isLoggedIn()) {
   const user = Auth.getUser() || {};
-  const userName = user.name || 'User';
-  const initials = userName.split(' ').filter(w => w).map(w => w[0]).join('').substring(0,2).toUpperCase();
+  const userName = user.name || user.email || 'User';
+  const initials = userName.split(' ').filter(w => w).map(w => w[0]).join('').substring(0,2).toUpperCase() || 'U';
 
   signInBtn.style.display = 'none';
   loggedInState.style.display = 'flex';
@@ -70,6 +189,14 @@ function setupTopbarInteractions() {
   });
  }
  
+ const logoutBtn = document.getElementById('logoutBtn');
+ if (logoutBtn) {
+  logoutBtn.addEventListener('click', (e) => {
+   e.preventDefault();
+   Auth.logout();
+  });
+ }
+
  // Initialize auth UI
  updateAuthUI();
 }
@@ -109,40 +236,17 @@ async function bootstrap() {
  // Mount chatbot widget
  mountChatbot();
  
- const session = JSON.parse(localStorage.getItem("venturx_session"));
- console.log("Startup Session:", session);
- 
- if (!session) {
-   console.log("No active session");
-   Router.init();
-   return;
+ const isAuthenticated = Auth.isLoggedIn();
+ const session = Auth.getUser();
+ if (isAuthenticated && session) {
+  console.log(`[Auth] Session restored for: ${session.email}`);
+  console.log("[Auth] Session restored");
+ } else {
+  console.log("[Auth] No active session found");
  }
- 
- if (session.isLoggedIn) {
-  const route = session.role === "admin" ? "#/admin" : "#/dashboard";
-  
-  if (session.role !== "admin" && session.email) {
-      try {
-          console.log("Fetching live user payload for:", session.email);
-          const endpoint = `/api/users/${encodeURIComponent(session.email)}`;
-          console.log("Active dashboard API:", endpoint);
-          const response = await fetch(endpoint);
-          const json = await response.json();
-          if (json.success) {
-              window.LiveMongoPayload = json;
-              window.PlatformData = json; // Ensure legacy modules like crm.js use live data
-          }
-      } catch(e) {
-          console.error("Failed to fetch live payload", e);
-      }
-  }
+ console.log("[Router] Initial route:", location.hash || '#/login');
 
-  console.log("Redirecting To:", route);
-  if (!location.hash || location.hash === '#/' || location.hash === '#/login' || location.hash === '#/signup') {
-    location.hash = route;
-  }
- }
-
+ // Initialize router to evaluate initial authentication and route
  Router.init();
 }
 

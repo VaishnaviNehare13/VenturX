@@ -12,15 +12,13 @@ function getChartColors() {
 function createMarketingChart() {
  const ctx = document.getElementById('marketingChart');
  if (!ctx || !window.Chart) {
-  console.error("marketingChart canvas missing or Chart.js not loaded");
   return;
  }
  
  if (marketingChartInstance) {
-  console.log("Destroying old marketing chart");
   marketingChartInstance.destroy();
+  marketingChartInstance = null;
  }
- console.log("Creating new marketing chart");
  
  const colors = getChartColors();
  
@@ -83,15 +81,13 @@ function createMarketingChart() {
 function createPerformanceChart() {
  const ctx = document.getElementById('performanceChart');
  if (!ctx || !window.Chart) {
-  console.error("performanceChart canvas missing or Chart.js not loaded");
   return;
  }
  
  if (leadsChartInstance) {
-  console.log("Destroying old performance chart");
   leadsChartInstance.destroy();
+  leadsChartInstance = null;
  }
- console.log("Creating new performance chart");
  
  const colors = getChartColors();
  
@@ -439,13 +435,6 @@ function renderActiveCampaigns() {
   const payload = window.LiveMongoPayload || window.PlatformData || {};
   const campaigns = Array.isArray(payload.campaigns) ? payload.campaigns : [];
   const analytics = window.LiveMongoDashboard || window.PlatformData || {};
-  
-  console.log("MARKETING DASHBOARD SOURCE:", analytics);
-  console.log("FULL PAYLOAD:", payload);
-  console.log("LIVE CAMPAIGNS:", payload.campaigns);
-  console.log("LIVE ROI:", analytics.marketing_roi);
-  console.log("LIVE AI:", analytics.ai_confidence);
-  console.log("LIVE SCORE:", analytics.prediction_score);
 
   if ((campaigns || []).length === 0) {
     if (container) {
@@ -643,7 +632,6 @@ function updateMarketingDashboard() {
   const payload = window.LiveMongoPayload || window.PlatformData || {};
   const existing = Array.isArray(payload.campaigns) ? payload.campaigns : [];
   const analytics = window.LiveMongoDashboard || window.PlatformData || {};
-  console.log("MARKETING DASHBOARD SOURCE:", analytics);
   
   let totalLeads = 0;
   (existing || []).forEach(c => {
@@ -653,10 +641,6 @@ function updateMarketingDashboard() {
   const roi = Number(analytics.marketing_roi || 0).toFixed(1);
   const ai = Number(analytics.ai_confidence || 0).toFixed(1);
   const score = Number(analytics.prediction_score || 0).toFixed(1);
-
-  console.log("LIVE ROI:", roi);
-  console.log("LIVE AI:", ai);
-  console.log("LIVE SCORE:", score);
 
   const aiElement = document.getElementById('aiPredictionAccuracy');
   if (aiElement) aiElement.textContent = `${ai}%`;
@@ -680,12 +664,8 @@ window.deleteCampaign = deleteCampaign;
 window.filterCampaigns = filterCampaigns;
 window.closeDetailsModal = closeDetailsModal;
 
-console.log("Marketing JS Loaded Successfully");
-console.log("Campaign Functions Registered");
-
 window.initMarketingPage = function() {
  const payload = window.LiveMongoPayload || window.PlatformData || {};
- console.log("FINAL LIVE MARKETING PAYLOAD:", payload);
  if (window.Chart) {
   createMarketingChart();
   createPerformanceChart();

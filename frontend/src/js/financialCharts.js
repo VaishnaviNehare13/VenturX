@@ -278,6 +278,7 @@ function destroyAllFinancialCharts() {
  financialChartInstances = { main: null, scenarios: null, expenseBreakdown: null, cashFlow: null, modalChart: null };
 }
 
+window.destroyFinancialCharts = destroyAllFinancialCharts;
 window.FinancialCharts = {
  initFinancialsChart,
  initScenariosChart,

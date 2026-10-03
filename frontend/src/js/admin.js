@@ -255,23 +255,87 @@ window.AdminUI = {
 };
 
 
-window.LiveMongoUsers = null;
+window.LiveMongoUsers = [];
+window.LiveMongoCRM = [];
 
 function renderUsers(mongoUsers) {
-    if (!Array.isArray(mongoUsers)) return;
-    window.LiveMongoUsers = mongoUsers.map(u => ({
-        id: u._id,
-        name: u.name || u.company || 'Unknown Workspace',
-        email: u.email || 'contact@workspace.com',
-        plan: u.plan || 'Starter',
-        status: u.status || 'Active',
-        metrics: {
-            churnRisk: u.churn_risk || 'Low',
-            aiUsageScore: u.ai_engagement || Math.floor(Math.random() * 50 + 20),
-            revenueContribution: u.revenue || 0,
-            activeCampaigns: Math.floor(Math.random() * 5)
-        }
-    }));
+    const rawUsers = Array.isArray(mongoUsers) 
+        ? mongoUsers 
+        : (Array.isArray(mongoUsers?.users) 
+            ? mongoUsers.users 
+            : (Array.isArray(mongoUsers?.data) ? mongoUsers.data : []));
+
+    console.log("[Data] Live MongoDB Users raw response:", mongoUsers);
+    console.log("[Data] Normalizing MongoDB users count:", rawUsers.length);
+
+    window.LiveMongoUsers = rawUsers.map((u, idx) => {
+        const name = u.name || u.company || u.full_name || (u.email ? u.email.split('@')[0] : `Workspace ${idx + 1}`);
+        const email = u.email || 'contact@workspace.com';
+        const plan = u.plan || u.subscription_plan || (u.role === 'admin' ? 'Enterprise' : 'Starter');
+        const status = u.status || 'Active';
+        const rev = typeof u.revenue === 'number' ? u.revenue : (parseFloat(u.revenue) || (plan === 'Enterprise' ? 25000 : (plan === 'Growth' ? 8000 : 2000)));
+
+        return {
+            id: u._id || u.id || `user_${idx}`,
+            name: name,
+            email: email,
+            company: u.company || u.startup_name || name,
+            plan: plan,
+            status: status,
+            role: u.role || 'user',
+            metrics: {
+                churnRisk: u.churn_risk || 'Low',
+                aiUsageScore: typeof u.ai_engagement === 'number' ? u.ai_engagement : (typeof u.ai_score === 'number' ? u.ai_score : 80),
+                revenueContribution: rev,
+                activeCampaigns: typeof u.active_campaigns === 'number' ? u.active_campaigns : 1
+            }
+        };
+    });
+    
+    // Ensure PlatformData is initialized and populated with normalized users
+    if (!window.PlatformData || typeof window.PlatformData !== 'object') {
+        window.PlatformData = {
+            users: [],
+            crm: [],
+            campaigns: [],
+            forecasts: [],
+            recommendations: [],
+            subscriptions: [],
+            notifications: [],
+            aiUsage: [],
+            segmentation: [],
+            branding: [],
+            content: [],
+            analytics: [],
+            financials: [],
+            activityFeed: [],
+            reports: [],
+            settings: {},
+            accounts: [],
+            workspaces: [],
+            recommendationMetrics: { generated: 0, accepted: 0, dismissed: 0, highestConfidence: [], mostTriggered: [] }
+        };
+        console.log("[Data] PlatformData initialized during renderUsers");
+    }
+    window.PlatformData.users = window.LiveMongoUsers;
+
+    // If PlatformData.crm is not yet populated from /api/crm, map normalized users into CRM accounts
+    if (!Array.isArray(window.PlatformData.crm) || window.PlatformData.crm.length === 0) {
+        window.PlatformData.crm = window.LiveMongoUsers.map(u => ({
+            id: u.id,
+            fullName: u.name,
+            startupName: u.company || u.name,
+            email: u.email,
+            plan: u.plan,
+            subscriptionPlan: u.plan.toLowerCase(),
+            status: u.status,
+            revenue: u.metrics.revenueContribution,
+            activityLevel: u.metrics.churnRisk === 'Low' ? 'Highly Active' : 'Moderate'
+        }));
+    }
+
+    console.log("[Data] Normalized CRM count:", (window.PlatformData.crm || []).length);
+    console.log("[Data] Final users rendered count:", window.LiveMongoUsers.length);
     
     // Trigger re-render if Users tab is active
     if (window.AdminState && window.AdminState.currentTab === 'users') {
@@ -292,19 +356,51 @@ async function loadUsers() {
     try {
         const response = await fetch("/api/users");
         if (!response.ok) throw new Error("API response not OK");
-        const users = await response.json();
-        console.log("Live MongoDB Users:", users);
-        renderUsers(users);
+        const json = await response.json();
+        console.log("[Admin API] /api/users response received:", json);
+        renderUsers(json);
     } catch (error) {
         console.error("Failed to load users:", error);
+    }
+}
+
+async function loadCrm() {
+    try {
+        const response = await fetch("/api/crm");
+        if (!response.ok) throw new Error("API response not OK");
+        const json = await response.json();
+        console.log("[Admin API] /api/crm response received:", json);
+        const crmList = Array.isArray(json) ? json : (Array.isArray(json?.crm) ? json.crm : []);
+        if (crmList.length > 0) {
+            window.LiveMongoCRM = crmList;
+            if (!window.PlatformData || typeof window.PlatformData !== 'object') {
+                window.PlatformData = {};
+            }
+            window.PlatformData.crm = crmList.map((c, idx) => ({
+                id: c._id || c.id || `crm_${idx}`,
+                fullName: c.name || c.fullName || c.customer_name || 'Customer',
+                startupName: c.company || c.startupName || c.name || 'Startup',
+                email: c.email || '',
+                plan: c.plan || c.subscriptionPlan || 'Starter',
+                subscriptionPlan: (c.plan || c.subscriptionPlan || 'Starter').toLowerCase(),
+                status: c.status || 'Active',
+                revenue: typeof c.revenue === 'number' ? c.revenue : (parseFloat(c.revenue) || 0),
+                activityLevel: c.activityLevel || (c.churn_risk === 'Low' ? 'Highly Active' : 'Moderate')
+            }));
+            console.log("[Data] Live CRM count loaded from MongoDB:", window.PlatformData.crm.length);
+        }
+    } catch (error) {
+        console.warn("Could not load /api/crm:", error);
     }
 }
 
 window.LiveMongoSubscriptions = [];
 
 function renderMongoSubscriptions(mongoSubs) {
-    if (!Array.isArray(mongoSubs)) return;
-    window.LiveMongoSubscriptions = mongoSubs;
+    const rawSubs = Array.isArray(mongoSubs) 
+        ? mongoSubs 
+        : (Array.isArray(mongoSubs?.subscriptions) ? mongoSubs.subscriptions : []);
+    window.LiveMongoSubscriptions = rawSubs;
     
     // Trigger re-render if Subscriptions tab is active
     if (window.AdminState && window.AdminState.currentTab === 'subscriptions') {
@@ -322,7 +418,7 @@ async function loadSubscriptions() {
         const response = await fetch("/api/subscriptions");
         if (!response.ok) throw new Error("API response not OK");
         const subs = await response.json();
-        console.log("Subscriptions Loaded:", subs);
+        console.log("[Admin API] /api/subscriptions response received:", subs);
         renderMongoSubscriptions(subs);
     } catch (error) {
         console.error("Failed to load subscriptions:", error);
@@ -332,8 +428,10 @@ async function loadSubscriptions() {
 window.LiveMongoAnalytics = [];
 
 function renderMongoAnalytics(mongoAnalytics) {
-    if (!Array.isArray(mongoAnalytics)) return;
-    window.LiveMongoAnalytics = mongoAnalytics;
+    const rawAnalytics = Array.isArray(mongoAnalytics) 
+        ? mongoAnalytics 
+        : (Array.isArray(mongoAnalytics?.analytics) ? mongoAnalytics.analytics : []);
+    window.LiveMongoAnalytics = rawAnalytics;
     
     // Trigger re-render if AI Analytics tab is active
     if (window.AdminState && window.AdminState.currentTab === 'ai-analytics') {
@@ -351,7 +449,7 @@ async function loadAnalytics() {
         const response = await fetch("/api/analytics");
         if (!response.ok) throw new Error("API response not OK");
         const analytics = await response.json();
-        console.log("AI Analytics Loaded:", analytics);
+        console.log("[Admin API] /api/analytics response received:", analytics);
         renderMongoAnalytics(analytics);
     } catch (error) {
         console.error("Failed to load AI analytics:", error);
@@ -361,8 +459,10 @@ async function loadAnalytics() {
 window.LiveMongoRecommendations = [];
 
 function renderMongoRecommendations(mongoRecommendations) {
-    if (!Array.isArray(mongoRecommendations)) return;
-    window.LiveMongoRecommendations = mongoRecommendations;
+    const rawRecs = Array.isArray(mongoRecommendations) 
+        ? mongoRecommendations 
+        : (Array.isArray(mongoRecommendations?.recommendations) ? mongoRecommendations.recommendations : []);
+    window.LiveMongoRecommendations = rawRecs;
     
     // Trigger re-render if Recommendations tab is active
     if (window.AdminState && window.AdminState.currentTab === 'recommendations') {
@@ -380,7 +480,7 @@ async function loadRecommendations() {
         const response = await fetch("/api/recommendations");
         if (!response.ok) throw new Error("API response not OK");
         const recommendations = await response.json();
-        console.log("Recommendations Loaded:", recommendations);
+        console.log("[Admin API] /api/recommendations response received:", recommendations);
         renderMongoRecommendations(recommendations);
     } catch (error) {
         console.error("Failed to load recommendations:", error);
@@ -409,7 +509,7 @@ async function loadPlatformHealth() {
         const response = await fetch("/api/platform-health");
         if (!response.ok) throw new Error("API response not OK");
         const health = await response.json();
-        console.log("Platform Health Loaded:", health);
+        console.log("[Admin API] /api/platform-health response received:", health);
         renderPlatformHealth(health);
     } catch (error) {
         console.error("Failed to load platform health:", error);
@@ -419,8 +519,10 @@ async function loadPlatformHealth() {
 window.LiveMongoReports = [];
 
 function renderMongoReports(reports) {
-    if (!Array.isArray(reports)) return;
-    window.LiveMongoReports = reports;
+    const rawReports = Array.isArray(reports) 
+        ? reports 
+        : (Array.isArray(reports?.reports) ? reports.reports : []);
+    window.LiveMongoReports = rawReports;
     
     // Trigger re-render if Reports tab is active
     if (window.AdminState && window.AdminState.currentTab === 'reports') {
@@ -438,7 +540,7 @@ async function loadReports() {
         const response = await fetch("/api/reports");
         if (!response.ok) throw new Error("API response not OK");
         const reports = await response.json();
-        console.log("Reports Loaded:", reports);
+        console.log("[Admin API] /api/reports response received:", reports);
         renderMongoReports(reports);
     } catch (error) {
         console.error("Failed to load reports:", error);
@@ -634,6 +736,7 @@ window.initAdminDashboard = function() {
 
   // Load live MongoDB users, subscriptions, analytics, and recommendations
   loadUsers();
+  loadCrm();
   loadSubscriptions();
   loadAnalytics();
   loadRecommendations();
@@ -740,10 +843,10 @@ function getOverviewHTML() {
   const data = window.LiveOverviewData;
   if (!data) return `<div style="color:#94a3b8; padding:20px;">Loading overview telemetry...</div>`;
 
-  const logs = data.activity_logs || [];
+  const logs = Array.isArray(data.activity_logs) ? data.activity_logs : [];
   const feedHTML = logs.length === 0 
     ? `<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No recent activity</td></tr>`
-    : logs.map(item => {
+    : logs.filter(Boolean).map(item => {
         let actionColor = '#10b981';
         if (item.action && item.action.includes('Failed')) actionColor = '#ef4444';
         if (item.action && item.action.includes('Deleted')) actionColor = '#ef4444';
@@ -755,8 +858,8 @@ function getOverviewHTML() {
           <i data-lucide="activity" style="width:12px; color:#94a3b8;"></i>
           ${item.user_email || 'System'}
         </td>
-        <td style="padding:8px 12px;"><span class="admin-badge admin-badge-info">[${item.module || 'SYS'}]</span> ${item.action || item.message}</td>
-        <td style="color:#64748b; font-family:monospace; font-size:11px; padding:8px 12px;">${new Date(item.timestamp).toLocaleTimeString()}</td>
+        <td style="padding:8px 12px;"><span class="admin-badge admin-badge-info">[${item.module || 'SYS'}]</span> ${item.action || item.message || ''}</td>
+        <td style="color:#64748b; font-family:monospace; font-size:11px; padding:8px 12px;">${item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : 'Recent'}</td>
       </tr>
     `}).join('');
 
@@ -914,34 +1017,49 @@ function bindOverviewEvents() {
 
 // --- Users ---
 function getUsersHTML() {
-  const accounts = window.LiveMongoUsers || window.AdminEngine.getAccountsData() || [];
-  const query = window.AdminState.searchQuery.toLowerCase();
+  const accounts = window.LiveMongoUsers || (window.AdminEngine && window.AdminEngine.getAccountsData ? window.AdminEngine.getAccountsData() : []);
+  const query = (window.AdminState && window.AdminState.searchQuery ? window.AdminState.searchQuery : '').toLowerCase();
   
-  const filtered = accounts.filter(acc => 
-    acc.name.toLowerCase().includes(query) || acc.email.toLowerCase().includes(query)
+  const filtered = (Array.isArray(accounts) ? accounts : []).filter(acc => 
+    acc && ((acc.name && acc.name.toLowerCase().includes(query)) || (acc.email && acc.email.toLowerCase().includes(query)))
   );
   
-  const rows = filtered.map((acc, idx) => `
+  const rows = filtered.map((acc, idx) => {
+    const name = acc.name || 'Unknown Workspace';
+    const email = acc.email || 'no-email@workspace.io';
+    const initials = (name.substring(0, 2) || 'WS').toUpperCase();
+    const metrics = acc.metrics || {};
+    const churnRisk = metrics.churnRisk || 'Low';
+    const badgeClass = churnRisk === 'High' ? 'danger' : (churnRisk === 'Medium' ? 'warning' : 'success');
+    const aiUsageScore = metrics.aiUsageScore || 0;
+    const revenueContribution = metrics.revenueContribution || 0;
+    const plan = acc.plan || 'Starter';
+    const planBadgeClass = plan === 'Enterprise' ? 'admin-badge-success' : 'admin-badge-info';
+    const activeCampaigns = metrics.activeCampaigns || 0;
+    const estLtv = Math.floor(revenueContribution * 0.42);
+
+    return `
     <tr class="admin-table-row-interactive" data-user-idx="${idx}">
       <td>
         <div class="admin-user-cell">
-          <div class="admin-user-avatar">${acc.name.substring(0, 2).toUpperCase()}</div>
+          <div class="admin-user-avatar">${initials}</div>
           <div>
-            <div style="font-weight:600; display:flex; align-items:center; gap:6px;">${acc.name} ${idx % 3 === 0 ? '<span style="width:6px; height:6px; background:#10b981; border-radius:50%;" title="Active Now"></span>' : ''}</div>
-            <div style="font-size:12px; color:#94a3b8;">${acc.email}</div>
+            <div style="font-weight:600; display:flex; align-items:center; gap:6px;">${name} ${idx % 3 === 0 ? '<span style="width:6px; height:6px; background:#10b981; border-radius:50%;" title="Active Now"></span>' : ''}</div>
+            <div style="font-size:12px; color:#94a3b8;">${email}</div>
           </div>
         </div>
       </td>
-      <td><span class="admin-badge admin-badge-${acc.metrics.churnRisk === 'High' ? 'danger' : (acc.metrics.churnRisk === 'Medium' ? 'warning' : 'success')}">${acc.metrics.churnRisk}</span></td>
-      <td><div style="display:flex; align-items:center; gap:8px;">${acc.metrics.aiUsageScore} <div class="admin-progress-bar" style="width:40px;"><div class="admin-progress-fill" style="width:${acc.metrics.aiUsageScore}%; background:#3b82f6;"></div></div></div></td>
-      <td>${formatCurrency(acc.metrics.revenueContribution)}</td>
-      <td><span class="admin-badge ${acc.plan === 'Enterprise' ? 'admin-badge-success' : 'admin-badge-info'}">${acc.plan}</span></td>
+      <td><span class="admin-badge admin-badge-${badgeClass}">${churnRisk}</span></td>
+      <td><div style="display:flex; align-items:center; gap:8px;">${aiUsageScore} <div class="admin-progress-bar" style="width:40px;"><div class="admin-progress-fill" style="width:${Math.min(100, Math.max(0, aiUsageScore))}%; background:#3b82f6;"></div></div></div></td>
+      <td>${formatCurrency(revenueContribution)}</td>
+      <td><span class="admin-badge ${planBadgeClass}">${plan}</span></td>
       <td>${idx % 2 === 0 ? 'Today' : '3d ago'}</td>
-      <td>${acc.metrics.activeCampaigns}</td>
-      <td>${Math.floor(acc.metrics.revenueContribution * 0.42)}</td>
+      <td>${activeCampaigns}</td>
+      <td>${formatCurrency(estLtv)}</td>
       <td><button class="admin-btn" style="padding:4px 8px; font-size:12px;"><i data-lucide="eye" style="width:12px;"></i> View</button></td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   return `
     <div class="admin-section-header">
@@ -1107,7 +1225,7 @@ function bindUserEvents() {
 
 // --- Subscriptions ---
 function getSubscriptionsHTML() {
-  const subsData = window.LiveMongoSubscriptions || [];
+  const subsData = Array.isArray(window.LiveMongoSubscriptions) ? window.LiveMongoSubscriptions : [];
   
   // Calculate dynamic metrics
   let totalMRR = 0;
@@ -1117,6 +1235,7 @@ function getSubscriptionsHTML() {
   let highChurnCount = 0;
   
   subsData.forEach(sub => {
+      if (!sub) return;
       totalMRR += parseFloat(sub.amount || 0);
       if (sub.plan === 'Starter') starterCount++;
       else if (sub.plan === 'Growth') growthCount++;
@@ -1124,16 +1243,16 @@ function getSubscriptionsHTML() {
       if (sub.churn_risk === 'High') highChurnCount++;
   });
   
-  const totalActive = subsData.length;
+  const totalActive = subsData.filter(Boolean).length;
   const churnRate = totalActive > 0 ? ((highChurnCount / totalActive) * 100).toFixed(1) : 0;
   
   // Render tables dynamically
-  const activeSubsRows = subsData.filter(s => s.status === 'Active').slice(0, 5).map(s => {
+  const activeSubsRows = subsData.filter(s => s && s.status === 'Active').slice(0, 5).map(s => {
       let badgeClass = s.plan === 'Enterprise' ? 'admin-badge-success' : 'admin-badge-info';
       return `<tr><td>${s.company || 'Unknown'}</td><td><span class="admin-badge ${badgeClass}">${s.plan || 'Starter'}</span></td><td>${formatCurrency(s.amount || 0)}</td><td>${s.renewal_date || 'N/A'}</td></tr>`;
   }).join('');
   
-  const atRiskSubsRows = subsData.filter(s => s.churn_risk === 'High' || s.churn_risk === 'Medium').slice(0, 5).map(s => {
+  const atRiskSubsRows = subsData.filter(s => s && (s.churn_risk === 'High' || s.churn_risk === 'Medium')).slice(0, 5).map(s => {
       let badgeClass = s.churn_risk === 'High' ? 'admin-badge-danger' : 'admin-badge-warning';
       return `<tr><td>${s.company || 'Unknown'}</td><td><span class="admin-badge ${badgeClass}">${s.churn_risk} Risk</span></td><td><button class="admin-btn" style="padding:4px 8px;">Alert</button></td></tr>`;
   }).join('');
@@ -1276,7 +1395,7 @@ function bindSubscriptionEvents() {
 
 // --- AI Analytics ---
 function getAiAnalyticsHTML() {
-  const analyticsData = window.LiveMongoAnalytics || [];
+  const analyticsData = Array.isArray(window.LiveMongoAnalytics) ? window.LiveMongoAnalytics : [];
   
   let totalAiScore = 0;
   let totalRequests = 0;
@@ -1286,6 +1405,7 @@ function getAiAnalyticsHTML() {
   let churnHigh = 0;
   
   analyticsData.forEach(a => {
+      if (!a) return;
       totalAiScore += (a.ai_score || 0);
       totalRequests += (a.monthly_ai_requests || 0);
       totalRetention += (a.retention_score || 0);
@@ -1295,17 +1415,17 @@ function getAiAnalyticsHTML() {
       else if (a.predicted_churn === 'High') churnHigh++;
   });
   
-  const count = analyticsData.length || 1; 
+  const count = analyticsData.filter(Boolean).length || 1; 
   const avgAiScore = Math.round(totalAiScore / count);
   const avgRetention = Math.round(totalRetention / count);
 
-  const topCompaniesRows = [...analyticsData].sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0)).slice(0, 5).map(a => {
+  const topCompaniesRows = analyticsData.filter(Boolean).sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0)).slice(0, 5).map(a => {
       return `<tr><td>${a.company || 'Unknown'}</td><td><span class="admin-badge admin-badge-success">${a.ai_score || 0}</span></td><td>${(a.monthly_ai_requests || 0).toLocaleString()}</td><td>+${a.growth_index || 0}%</td><td>${a.retention_score || 0}%</td></tr>`;
   }).join('');
   
-  const atRiskRows = analyticsData.filter(a => a.predicted_churn !== 'Low').map(a => {
+  const atRiskRows = analyticsData.filter(a => a && a.predicted_churn !== 'Low').map(a => {
       let badgeClass = a.predicted_churn === 'High' ? 'admin-badge-danger' : 'admin-badge-warning';
-      return `<tr><td>${a.company || 'Unknown'}</td><td><span class="admin-badge ${badgeClass}">${a.predicted_churn}</span></td><td><button class="admin-btn" style="padding:4px 8px;">Review Strategy</button></td></tr>`;
+      return `<tr><td>${a.company || 'Unknown'}</td><td><span class="admin-badge ${badgeClass}">${a.predicted_churn || 'Medium'}</span></td><td><button class="admin-btn" style="padding:4px 8px;">Review Strategy</button></td></tr>`;
   }).join('');
 
   return `
@@ -1470,7 +1590,7 @@ function bindAiAnalyticsEvents() {
 
 // --- Recommendations ---
 function getRecommendationsHTML() {
-  const recommendations = window.LiveMongoRecommendations || [];
+  const recommendations = Array.isArray(window.LiveMongoRecommendations) ? window.LiveMongoRecommendations : [];
   
   let totalHighPriority = 0;
   let totalConfidence = 0;
@@ -1479,6 +1599,7 @@ function getRecommendationsHTML() {
   let totalImpact = 0;
   
   recommendations.forEach(r => {
+      if (!r) return;
       if (r.priority === 'High') totalHighPriority++;
       if (r.status === 'Accepted') totalAccepted++;
       if (r.status === 'Ignored') totalIgnored++;
@@ -1486,12 +1607,12 @@ function getRecommendationsHTML() {
       totalImpact += (r.impact || 0);
   });
   
-  const count = recommendations.length || 1;
+  const count = recommendations.filter(Boolean).length || 1;
   const avgConfidence = Math.round(totalConfidence / count);
   const acceptanceRate = Math.round((totalAccepted / count) * 100);
   const ignoredRate = Math.round((totalIgnored / count) * 100);
   
-  const formattedImpact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalImpact);
+  const formattedImpact = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalImpact);
 
   return `
     <div class="admin-section-header">
@@ -1819,7 +1940,7 @@ window.downloadReport = function(id, title, format) {
 }
 
 function getReportsHTML() {
-  const reports = window.LiveMongoReports || [];
+  const reports = Array.isArray(window.LiveMongoReports) ? window.LiveMongoReports : [];
   
   let pdfCount = 0;
   let csvCount = 0;
@@ -1832,6 +1953,7 @@ function getReportsHTML() {
   let totalDownloads = 0;
   
   reports.forEach(r => {
+     if (!r) return;
      if (r.format === 'PDF') pdfCount++;
      if (r.format === 'CSV') csvCount++;
      if (r.format === 'JSON') jsonCount++;
@@ -1843,8 +1965,9 @@ function getReportsHTML() {
      totalDownloads += (r.download_count || 0);
   });
   
-  const avgAiScore = reports.length > 0 ? Math.round(totalAiScore / reports.length) : 0;
-  const completionRate = reports.length > 0 ? Math.round((completedCount / reports.length) * 100) : 0;
+  const validCount = reports.filter(Boolean).length;
+  const avgAiScore = validCount > 0 ? Math.round(totalAiScore / validCount) : 0;
+  const completionRate = validCount > 0 ? Math.round((completedCount / validCount) * 100) : 0;
 
   return `
     <div class="admin-section-header" style="display:flex; justify-content:space-between; align-items:center;">

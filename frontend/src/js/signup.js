@@ -80,29 +80,32 @@ window.initSignup = function () {
                 return;
             }
 
-            // CREATE SESSION
+            // CREATE & SAVE SESSION FIRST
             const session = {
                 name: data.user.name,
                 email: data.user.email,
-                initials: data.user.name.substring(0, 2).toUpperCase(),
-                role: "user",
+                initials: (data.user.name || "U").substring(0, 2).toUpperCase(),
+                role: data.user.role || "user",
+                company: data.user.company || company || '',
                 isLoggedIn: true,
                 loginTime: Date.now()
             };
 
-            localStorage.setItem(
-                "venturx_session",
-                JSON.stringify(session)
-            );
-
             if (window.Auth) {
                 window.Auth.login(session);
+            } else {
+                localStorage.setItem("venturx_session", JSON.stringify(session));
             }
+
+            console.log("[Auth] Login successful");
+            console.log("[Auth] Workspace created and session established for:", session.email);
 
             alert("Workspace Created Successfully");
 
-            // REDIRECT
-            window.location.hash = '#/dashboard';
+            // REDIRECT TO AUTHENTICATED ROUTE
+            const targetRoute = session.role === "admin" ? "#/admin" : "#/dashboard";
+            console.log(`[Router] Navigating to authenticated route: ${targetRoute}`);
+            window.location.hash = targetRoute;
 
         } catch (error) {
 

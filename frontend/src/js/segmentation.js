@@ -1,23 +1,25 @@
 console.log("Segmentation JS Loaded");
 let segmentsData = {};
+let segmentationInitialized = false;
 
-async function initializeSegmentation() {
- console.log("Segmentation initialized");
+async function initializeSegmentation(force = false) {
+ if (segmentationInitialized && !force) {
+  return;
+ }
+ segmentationInitialized = true;
  
  // HTML already has skeleton loaders, so we don't overwrite them with text
  
  try {
-  console.log("Fetching segmentation API");
   const response = await fetch('/api/segmentation');
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
   const data = await response.json();
-  console.log("FULL API DATA:", data);
   segmentsData = data;
   
-  (window.PlatformData.segmentation || []).push(data);
+  window.PlatformData.segmentation = [data];
   window.PlatformEngine.logActivity('segmentation', `Segmentation analysis completed for ${data.metrics?.total_customers || 0} customers`);
   window.PlatformEngine.savePlatformData("segmentation");
   
@@ -105,20 +107,10 @@ async function initializeSegmentation() {
       ]
   };
 
-  console.log(
-      "SEGMENTATION INPUT:",
-      segmentationPayload
-  );
-
   const segmentationResponse =
       await window.API.Segmentation.saveSegmentation(
           segmentationPayload
       );
-
-  console.log(
-      "SEGMENTATION RESPONSE:",
-      segmentationResponse
-  );
 
  } catch (error) {
   console.error("Segmentation API Error:", error);

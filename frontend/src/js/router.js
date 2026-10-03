@@ -100,47 +100,55 @@ const Router = (() => {
  }
 
  async function navigate(hash) {
-  console.log("ACTIVE SESSION:", JSON.parse(localStorage.getItem("venturx_session")));
-   
+  hash = hash || '#/login';
   if (window.currentRoute === hash) return;
   window.currentRoute = hash;
 
   const isPublic = publicRoutes.includes(hash);
-  
-  const session = JSON.parse(localStorage.getItem("venturx_session"));
-  
+  const isAuthenticated = window.Auth ? window.Auth.isLoggedIn() : Boolean(localStorage.getItem("venturx_session"));
+  const user = window.Auth ? window.Auth.getUser() : JSON.parse(localStorage.getItem("venturx_session") || '{}');
+
+  console.log(`[Router] Navigating to: ${hash} | Public: ${isPublic} | Authenticated: ${isAuthenticated}`);
+
   // Protected Route Middleware
-  if (!isPublic && !session) {
-   window.location.hash = '#/login';
+  if (!isPublic && !isAuthenticated) {
+   console.log(`[Router] Route ${hash} requires authentication. Redirecting to #/login`);
+   console.log('[Router] Navigating to #/login');
+   window.currentRoute = '';
+   window.location.replace('#/login');
    return;
   }
   
   // Role Redirects (If logged in and visiting login/signup, redirect to dashboard/admin)
-  if ((hash === '#/login' || hash === '#/signup') && window.Auth && window.Auth.isLoggedIn()) {
-    const user = window.Auth.getUser();
-    if(user && user.role === 'admin') {
-      window.location.hash = '#/admin';
-    } else {
-      window.location.hash = '#/dashboard';
-    }
+  if ((hash === '#/login' || hash === '#/signup') && isAuthenticated) {
+    const targetRoute = (user && user.role === 'admin') ? '#/admin' : '#/dashboard';
+    console.log(`[Router] Authenticated user on auth page (${hash}). Redirecting to: ${targetRoute}`);
+    console.log('[Router] Navigating to authenticated route');
+    window.currentRoute = '';
+    window.location.replace(targetRoute);
     return;
   }
 
   // Admin access control
   if (hash === '#/admin') {
-    const session = JSON.parse(localStorage.getItem("venturx_session"));
-    if (!session || session.role !== 'admin') {
-      window.location.hash = '#/login';
+    if (!isAuthenticated || !user || user.role !== 'admin') {
+      console.log('[Router] Admin access denied. Redirecting to #/login');
+      console.log('[Router] Navigating to #/login');
+      window.currentRoute = '';
+      window.location.replace('#/login');
       return;
     }
   }
 
-  const path = routes[hash] || routes['#/'];
+  if (hash === '#/') {
+    console.log('[Router] Landing page selected');
+  } else if (hash === '#/dashboard' || hash === '#/admin') {
+    console.log('[Router] Navigating to authenticated route');
+  }
+
+  const path = routes[hash] || routes['#/login'] || routes['#/'];
 
   try {
-   console.log("Loading Route:", hash);
-   if (hash === '#/admin') console.log("Attempting Admin Route Load");
-
    // SAFELY DESTROY DASHBOARD CHARTS TO PREVENT MEMORY LEAKS
    if (window.Chart) {
      for (let id in Chart.instances) {
@@ -153,6 +161,9 @@ const Router = (() => {
     await loadAdminDependencies();
    } else if (!isPublic) {
     await loadDashboardDependencies();
+    if (window.ensureLiveUserPayload) {
+     await window.ensureLiveUserPayload();
+    }
    }
    
    await load('#content', path);
@@ -244,13 +255,25 @@ const Router = (() => {
  }
 
  function currentHash() {
-  return location.hash || '#/';
+  return location.hash || '#/login';
  }
 
  function init() {
   window.addEventListener('hashchange', () => navigate(currentHash()));
-  if (!location.hash) {
-   location.hash = '#/';
+  
+  const initialHash = location.hash;
+  const isAuthenticated = window.Auth ? window.Auth.isLoggedIn() : Boolean(localStorage.getItem("venturx_session"));
+  const user = window.Auth ? window.Auth.getUser() : JSON.parse(localStorage.getItem("venturx_session") || '{}');
+
+  if (!initialHash) {
+   if (isAuthenticated) {
+    const targetRoute = (user && user.role === 'admin') ? '#/admin' : '#/dashboard';
+    console.log(`[Router] Navigating to authenticated route: ${targetRoute}`);
+    location.replace(targetRoute);
+   } else {
+    console.log('[Router] Navigating to #/login');
+    location.replace('#/login');
+   }
   } else {
    navigate(currentHash());
   }

@@ -80,10 +80,11 @@
   </div>
 
   <div class="card">
-   <h3> Security</h3>
+   <h3><i data-lucide="shield" class="icon-sm text-red-500"></i> Account & Security</h3>
    <div class="mt-16" style="display: flex; flex-direction: column; gap: 12px;">
     <button class="btn-premium" style="width: 100%; justify-content: center;"> Change Password</button>
     <button class="btn-premium" style="width: 100%; justify-content: center;"><i data-lucide="smartphone" class="icon-sm text-blue-500"></i> Two-Factor Auth</button>
+    <button type="button" class="btn-premium" style="width: 100%; justify-content: center; background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); margin-top: 8px;" onclick="if(window.Auth && window.Auth.logout){ window.Auth.logout(); } else { localStorage.removeItem('venturx_session'); window.location.replace('#/login'); }">Log Out</button>
    </div>
   </div>
  </div>

@@ -19,7 +19,8 @@ const avatarColors = [
 
 function getAvatarStyle(name) {
  let hash = 0;
- for (let i = 0; i < (name || []).length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+ const str = String(name || '');
+ for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
  const index = Math.abs(hash) % (avatarColors || []).length;
  return avatarColors[index];
 }

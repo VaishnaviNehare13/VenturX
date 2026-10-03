@@ -29,7 +29,6 @@ window.initializeForecasting = async function() {
  
  // Startup Modal interactions
  const btnAnalyze = document.getElementById('analyzeStartupBtn');
- console.log(btnAnalyze);
  
  const modal = document.getElementById('startupModal');
  const btnClose = document.getElementById('closeStartupModal');
@@ -38,8 +37,6 @@ window.initializeForecasting = async function() {
  
  if (btnAnalyze) {
   btnAnalyze.addEventListener('click', () => {
-   console.log("BUTTON CLICKED");
-   console.log(modal);
    if (modal) {
     modal.style.display = 'flex';
     modal.style.visibility = 'visible';

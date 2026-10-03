@@ -54,7 +54,7 @@
           Live Sync Active
         </div>
         <button class="admin-btn"><i data-lucide="bell" style="width: 16px; height: 16px;"></i></button>
-        <button class="admin-btn" onclick="window.location.hash='#/'"><i data-lucide="log-out" style="width: 16px; height: 16px;"></i> Exit Admin</button>
+        <button class="admin-btn" onclick="if(window.Auth && window.Auth.logout){ window.Auth.logout(); } else { window.location.hash='#/login'; }"><i data-lucide="log-out" style="width: 16px; height: 16px;"></i> Log Out</button>
         <div class="admin-profile" title="Admin">A</div>
       </div>
     </header>

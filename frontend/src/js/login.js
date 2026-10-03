@@ -10,13 +10,17 @@ window.initLogin = function() {
     let loginInProgress = false;
 
     // Step 3: Single login handler
-    newBtn.addEventListener('click', async () => {
+    newBtn.addEventListener('click', async (e) => {
+        if (e) e.preventDefault();
         if (loginInProgress) return;
         loginInProgress = true;
 
         const emailInput = document.getElementById('loginEmail');
         const passwordInput = document.getElementById('loginPassword');
-        if(!emailInput || !passwordInput) return;
+        if(!emailInput || !passwordInput) {
+            loginInProgress = false;
+            return;
+        }
         
         const email = emailInput.value.trim();
         const password = passwordInput.value;
@@ -41,32 +45,28 @@ window.initLogin = function() {
             const data = await response.json();
             
             if (data.success) {
+                // 1. Store authenticated session FIRST
+                const session = {
+                    ...data.user,
+                    isLoggedIn: true,
+                    loginTime: Date.now()
+                };
 
-                // Store authenticated session
-                localStorage.setItem(
-                    "venturx_session",
-                    JSON.stringify(data.user)
-                );
-
-                console.log("LOGIN SUCCESS:", data.user);
-
-                // Redirect based on role
-                if (data.user.role === "admin") {
-
-                    console.log("Redirecting Admin...");
-
-                    window.location.hash = "#/admin";
-
+                if (window.Auth) {
+                    window.Auth.login(session);
                 } else {
-
-                    console.log("Redirecting User Dashboard...");
-
-                    window.location.hash = "#/dashboard";
+                    localStorage.setItem("venturx_session", JSON.stringify(session));
                 }
 
-            } else {
+                console.log("[Auth] Login successful");
 
-                alert("Invalid email or password");
+                // 2. Redirect based on role to authenticated route
+                const targetRoute = session.role === "admin" ? "#/admin" : "#/dashboard";
+                console.log(`[Router] Navigating to authenticated route: ${targetRoute}`);
+                window.location.hash = targetRoute;
+
+            } else {
+                alert(data.message || "Invalid email or password");
             }
         } catch (error) {
             console.error("Login Error:", error);
